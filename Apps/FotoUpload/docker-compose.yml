@@ -1,0 +1,71 @@
+name: foto-upload
+services:
+  foto-upload:
+    image: ghcr.io/thoms263/foto_upload_offiziel:3.0.0
+    container_name: foto-upload
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - target: 8080
+        published: "8080"
+        protocol: tcp
+    volumes:
+      - type: bind
+        source: /DATA/AppData/$AppID/data
+        target: /data
+    environment:
+      PHOTO_DATA_DIR: /data
+      PHOTO_PUBLIC_URL: ""
+      PHOTO_ADMIN_PASSWORD: ""
+    x-casaos:
+      ports:
+        - container: "8080"
+          description:
+            en_US: Web interface
+            de_DE: Weboberfläche
+      volumes:
+        - container: /data
+          description:
+            en_US: Albums, originals and settings
+            de_DE: Alben, Originale und Einstellungen
+      envs:
+        - container: PHOTO_PUBLIC_URL
+          description:
+            en_US: Optional external HTTPS address for QR codes
+            de_DE: Optionale externe HTTPS-Adresse für QR-Codes
+        - container: PHOTO_ADMIN_PASSWORD
+          description:
+            en_US: Initial admin password, generated in /data/.initial-admin-password if empty
+            de_DE: Erstpasswort, bei leerem Wert in /data/.initial-admin-password erzeugt
+x-casaos:
+  id: io.github.thoms263.foto-upload
+  main: foto-upload
+  port_map: "8080"
+  index: /
+  scheme: http
+  architectures:
+    - amd64
+    - arm64
+  title:
+    en_US: Foto-Upload
+    de_DE: Foto-Upload
+  tagline:
+    en_US: Private guest albums for photos and videos
+    de_DE: Private Gästealben für Fotos und Videos
+  description:
+    en_US: Collect event photos and videos on your own server. Guests open an album by QR code, upload from their phones and download originals individually or as a ZIP. The web interface is in German.
+    de_DE: Sammle Fotos und Videos von Feiern und Reisen auf deinem Server. Gäste öffnen ein Album per QR-Code, laden vom Handy hoch und können Originale einzeln oder als ZIP herunterladen.
+  category: Media
+  author: ThomS263
+  developer: ThomS263
+  version: "3.0.0"
+  icon: https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.0/Apps/FotoUpload/icon.png
+  thumbnail: https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.0/Apps/FotoUpload/thumbnail.png
+  screenshot_link:
+    - https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.0/Apps/FotoUpload/screenshot-1.png
+    - https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.0/Apps/FotoUpload/screenshot-2.png
+  tips:
+    before_install:
+      en_US: Open /admin to create your first album. With no initial password configured, read /data/.initial-admin-password in the container. For guests outside the LAN, set PHOTO_PUBLIC_URL to the existing public address.
+      de_DE: Öffne /admin und lege das erste Album an. Das automatisch erzeugte Erstpasswort steht im Container unter /data/.initial-admin-password. Für Gäste außerhalb des Heimnetzes trage die vorhandene öffentliche Adresse als PHOTO_PUBLIC_URL ein.

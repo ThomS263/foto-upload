@@ -1,0 +1,9 @@
+<aside class="share panel" aria-label="QR-Code zur Startseite">
+  <a href="{{ url_for('pages.qr') }}" aria-label="QR-Code vergrößern" class="qr-image">
+    <img src="{{ url_for('pages.qr') }}" width="144" height="144" alt="QR-Code zur Startseite">
+  </a>
+  <div><h2>Per QR-Code öffnen</h2>
+    <p>Mit der Handykamera scannen und ein Album wählen.</p>
+    <a class="inline-link" href="{{ share }}">Startseite öffnen <span aria-hidden="true">↗</span></a>
+  </div>
+</aside>

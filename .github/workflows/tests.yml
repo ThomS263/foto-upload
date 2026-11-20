@@ -1,0 +1,88 @@
+name: Tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - run: playwright install --with-deps chromium
+      - name: Install FFmpeg for the camera and playback test
+        run: |
+          if ! command -v ffmpeg >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends ffmpeg
+          fi
+      - run: python -m pytest -q test_app.py test_browser.py
+        env:
+          FOTO_TEST_SHOTS: /tmp/foto-screenshots
+      - uses: actions/upload-artifact@v4
+        with:
+          name: browser-screenshots
+          path: /tmp/foto-screenshots
+          retention-days: 5
+      - name: Validate CasaOS metadata and Compose
+        env:
+          AppID: foto-upload
+        run: |
+          docker compose config -q
+          curl -fsSL --retry 3 https://raw.githubusercontent.com/IceWhaleTech/CasaOS-AppStore/07178f6d2c2797bd93e4260ba72f3ee972b1041e/.github/actions/validate-compose/scripts/validate_compose.py -o "$RUNNER_TEMP/validate_compose.py"
+          python "$RUNNER_TEMP/validate_compose.py" --app-path FotoUpload --report-json "$RUNNER_TEMP/store.json"
+          python scripts/package_store.py
+          docker compose -f dist/foto-upload-casaos.yaml config -q
+      - uses: actions/upload-artifact@v4
+        with:
+          name: casaos-submission
+          path: dist/
+          retention-days: 14
+
+  container:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+        if: matrix.arch == 'arm64'
+      - uses: docker/setup-buildx-action@v3
+      - name: Build store image
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: docker buildx build --platform linux/$ARCH --target store --load -t foto-test:ci .
+      - name: Start image and verify installation
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          docker run -d --name store-test --platform linux/$ARCH -p 127.0.0.1::8080 -v foto-test-data:/data foto-test:ci
+          port=$(docker inspect -f '{{(index (index .NetworkSettings.Ports "8080/tcp") 0).HostPort}}' store-test)
+          for attempt in $(seq 1 60); do
+            if curl -fsS --max-time 3 "http://127.0.0.1:$port/health" > "$RUNNER_TEMP/health.json"; then break; fi
+            sleep 2
+          done
+          python -c "import json,sys; assert json.load(open(sys.argv[1]))['ok']" "$RUNNER_TEMP/health.json"
+          curl -fsS "http://127.0.0.1:$port/qr.png" -o "$RUNNER_TEMP/qr.png"
+          docker exec store-test python -c "from pathlib import Path; import json; assert json.loads(Path('/data/.events.json').read_text()) == {}; assert Path('/data/.initial-admin-password').stat().st_mode & 0o777 == 0o600"
+      - name: Follow the README quickstart in a fresh clone
+        if: matrix.arch == 'amd64'
+        working-directory: ${{ runner.temp }}
+        run: |
+          git clone "$GITHUB_WORKSPACE" foto-upload
+          cd foto-upload
+          docker compose up -d --build --wait
+          docker compose exec -T foto-upload cat /data/.initial-admin-password | python3 scripts/verify_install.py http://127.0.0.1:8080
+          docker compose down
+      - name: Container logs on failure
+        if: failure()
+        run: docker logs --tail 60 store-test || true

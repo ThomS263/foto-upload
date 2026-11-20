@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "store_id": "thoms263-foto-upload",
+  "name": {
+    "en_US": "Foto-Upload",
+    "de_DE": "Foto-Upload"
+  },
+  "maintainer": "ThomS263"
+}

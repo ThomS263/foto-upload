@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="cover">
+  <div><h1>Gemeinsame<br>Fotoalben</h1>
+    <p>Wähle dein Album, um Fotos und Videos anzusehen oder hochzuladen.</p></div>
+  <img src="{{ url_for('static', filename='cover.webp') }}" width="820" height="430" alt="">
+</section>
+<div class="columns">
+  <section><h2>Alben <span class="count">{{ albums|length }}</span></h2>
+    <div class="album-list">
+    {% for slug, event in albums %}
+      <a class="album-link" href="{{ url_for('pages.album', slug=slug) }}">
+        <span class="album-monogram tone-{{ loop.index0 % 3 }}" aria-hidden="true">{{ event.title[:1]|upper }}</span>
+        <span class="grow"><strong>{{ event.title }}</strong>{% if event.subtitle %}<small>{{ event.subtitle }}</small>{% endif %}</span>
+        <span class="arrow" aria-hidden="true">→</span>
+      </a>
+    {% else %}
+      <p class="panel empty">Hier erscheinen die freigegebenen Alben. Das erste Album kannst du in der <a href="{{ url_for('admin.panel') }}">Verwaltung anlegen</a>.</p>
+    {% endfor %}
+    </div>
+  </section>
+  {% include "share.html" %}
+</div>
+{% endblock %}

@@ -1,0 +1,7 @@
+**
+!requirements.txt
+!LICENSE
+!foto_upload/
+!foto_upload/**
+**/__pycache__/
+**/*.pyc

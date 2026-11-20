@@ -1,0 +1,17 @@
+name: foto-upload
+services:
+  foto-upload:
+    build: .
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "${PHOTO_PORT:-8080}:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      PHOTO_DATA_DIR: /data
+      PHOTO_PUBLIC_URL: ${PHOTO_PUBLIC_URL:-}
+      PHOTO_ADMIN_PASSWORD: ${PHOTO_ADMIN_PASSWORD:-}
+      PHOTO_ADMIN_PASSWORD_HASH: ${PHOTO_ADMIN_PASSWORD_HASH:-}
+      PHOTO_BACKUP_DIR: ${PHOTO_BACKUP_DIR:-}

@@ -1,0 +1,98 @@
+name: Veröffentlichung
+on:
+  push:
+    tags: ["v[0-9]*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    env:
+      AppID: foto-upload
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read and verify the version
+        id: version
+        run: |
+          image=$(docker compose -f Apps/FotoUpload/docker-compose.yml config --images)
+          version=${image##*:}
+          test "v$version" = "$GITHUB_REF_NAME"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.version.outputs.image }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.licenses=Apache-2.0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Package the CasaOS manifests
+        run: |
+          python -m pip install 'PyYAML>=6,<7'
+          python scripts/package_store.py
+          docker compose -f dist/foto-upload-casaos.yaml config -q
+      - name: Create and verify Docker archives for installation from GitHub
+        env:
+          IMAGE: ${{ steps.version.outputs.image }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if ! command -v skopeo >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends skopeo
+          fi
+          for arch in amd64 arm64; do
+            tarfile="dist/foto-upload-$VERSION-linux-$arch.tar"
+            archive="docker-archive:$tarfile:$IMAGE"
+            skopeo --override-os linux --override-arch "$arch" copy "docker://$IMAGE" "$archive"
+            skopeo inspect --config "$archive" | jq -e --arg arch "$arch" '.os == "linux" and .architecture == $arch'
+            gzip -1 "$tarfile"
+          done
+          cd dist
+          sha256sum *.tar.gz *.yaml *.zip > SHA256SUMS
+      - name: Exercise the documented download installation before publishing
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          cd dist
+          sha256sum --check SHA256SUMS
+          docker load --input "foto-upload-$VERSION-linux-amd64.tar.gz"
+          docker compose -f foto-upload-casaos.yaml up -d --pull never --wait
+          docker exec foto-upload cat /data/.initial-admin-password | python3 ../scripts/verify_install.py http://127.0.0.1:8080
+          docker compose -f foto-upload-casaos.yaml down
+      - name: Publish downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if ! gh release view "$GITHUB_REF_NAME" --json isDraft > "$RUNNER_TEMP/release-state.json"; then
+            cat > "$RUNNER_TEMP/release.md" <<EOF
+          Foto-Upload $VERSION für selbst gehostete Foto- und Videoalben. Diese Ausgabe unterstützt Linux auf AMD64 und ARM64.
+
+          [Manuelle Installation und erster Start](https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_REF_NAME/INSTALLATION.md)
+
+          Für den CasaOS-Import verwende \`foto-upload-casaos.yaml\`. Die beiden Docker-Archive lassen sich direkt mit \`docker load\` laden. \`SHA256SUMS\` enthält die Prüfsummen aller Downloads, das ZIP enthält den Store-Eintrag mit Grafiken.
+          EOF
+            gh release create "$GITHUB_REF_NAME" --draft --verify-tag --title "Foto-Upload $VERSION" --notes-file "$RUNNER_TEMP/release.md"
+          else
+            jq -e '.isDraft == true' "$RUNNER_TEMP/release-state.json"
+          fi
+          gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+          gh release edit "$GITHUB_REF_NAME" --draft=false --latest
