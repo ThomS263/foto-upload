@@ -1,0 +1,27 @@
+name: Öffentliche CasaOS-Installation prüfen
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  casaos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install from the public YAML linked in the guide
+        env:
+          AppID: foto-upload
+        run: |
+          url=$(python3 -c 'import pathlib,re; print(re.search(r"\((https://raw\.githubusercontent\.com/[^)]+/Apps/FotoUpload/docker-compose\.yml)\)", pathlib.Path("INSTALLATION.md").read_text())[1])')
+          curl --fail --silent --show-error --location --retry 3 "$url" -o "$RUNNER_TEMP/casaos.yaml"
+          export DOCKER_CONFIG="$RUNNER_TEMP/anonymous-docker"
+          mkdir -p "$DOCKER_CONFIG"
+          export PHOTO_ADMIN_PASSWORD="$(openssl rand -hex 24)"
+          cat > "$RUNNER_TEMP/form.yaml" <<'EOF'
+          services:
+            foto-upload:
+              environment:
+                PHOTO_ADMIN_PASSWORD: ${PHOTO_ADMIN_PASSWORD:?}
+          EOF
+          docker compose -f "$RUNNER_TEMP/casaos.yaml" -f "$RUNNER_TEMP/form.yaml" up -d --pull always --wait
+          printf '%s' "$PHOTO_ADMIN_PASSWORD" | python3 scripts/verify_install.py http://127.0.0.1:8080
+          docker exec foto-upload test ! -e /data/.initial-admin-password

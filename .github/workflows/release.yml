@@ -86,9 +86,11 @@ jobs:
             cat > "$RUNNER_TEMP/release.md" <<EOF
           Foto-Upload $VERSION für selbst gehostete Foto- und Videoalben. Diese Ausgabe unterstützt Linux auf AMD64 und ARM64.
 
-          [Manuelle Installation und erster Start](https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_REF_NAME/INSTALLATION.md)
+          [Manuelle Installation und erster Start](https://github.com/$GITHUB_REPOSITORY/blob/main/INSTALLATION.md)
 
-          Für den CasaOS-Import verwende \`foto-upload-casaos.yaml\`. Die beiden Docker-Archive lassen sich direkt mit \`docker load\` laden. \`SHA256SUMS\` enthält die Prüfsummen aller Downloads, das ZIP enthält den Store-Eintrag mit Grafiken.
+          **CasaOS mit Internetzugang.** Die verlinkte YAML unter **App Store → Custom Install → Import** einfügen. CasaOS lädt das passende Image. [YAML für den Online-Import](https://raw.githubusercontent.com/$GITHUB_REPOSITORY/$GITHUB_REF_NAME/Apps/FotoUpload/docker-compose.yml)
+
+          **Installation aus den Downloads.** Zuerst das Archiv für AMD64 oder ARM64 mit \`docker load\` laden und dann \`foto-upload-casaos.yaml\` verwenden. \`SHA256SUMS\` enthält die Prüfsummen. Das ZIP enthält den Store-Eintrag mit Grafiken.
           EOF
             gh release create "$GITHUB_REF_NAME" --draft --verify-tag --title "Foto-Upload $VERSION" --notes-file "$RUNNER_TEMP/release.md"
           else

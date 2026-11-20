@@ -1,8 +1,17 @@
 # Foto-Upload manuell installieren
 
-Für einen Linux-Server mit Git und Docker ist die Installation aus dem Quellcode der kürzeste Weg. Für CasaOS gibt es außerdem eine importierbare Konfiguration und fertig gebaute Images für Intel/AMD-Rechner und 64-Bit-ARM-Geräte wie den Raspberry Pi. Pro Server genügt eine der folgenden Varianten.
+Auf CasaOS kannst du Foto-Upload vollständig im Browser installieren. Auf einem anderen Linux-Server kannst du aus dem Git-Checkout starten. Für die Installation aus einem Download gibt es fertige Images für Intel/AMD und 64-Bit-ARM. Wähle einen der folgenden Wege.
 
-## 1. Mit Git und Docker Compose
+## 1. In CasaOS über die Oberfläche
+
+1. Die verlinkte YAML im Browser öffnen und den **gesamten Text** kopieren. [CasaOS-Konfiguration für Foto-Upload 3.0.0](https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.0/Apps/FotoUpload/docker-compose.yml)
+2. Im CasaOS-Dashboard den **App Store → Custom Install** öffnen. Oben rechts das **Import**-Symbol wählen, die YAML einfügen und bestätigen. [CasaOS-Dokumentation](https://wiki.casaos.io/en/apps)
+3. Im Installationsdialog unter **Umgebungsvariablen** bei `PHOTO_ADMIN_PASSWORD` ein eigenes Erstpasswort eingeben. Bei einer bestehenden externen HTTPS-Adresse kannst du auch `PHOTO_PUBLIC_URL` setzen. Der Host-Port ist standardmäßig `8080`, der Datenordner auf dem Server `/DATA/AppData/foto-upload/data`.
+4. **Installieren** wählen. CasaOS lädt das Image `ghcr.io/thoms263/foto_upload_offiziel:3.0.0` für die passende Architektur. Öffne die neue Kachel **Foto-Upload**, wähle **Verwaltung** und melde dich mit deinem Erstpasswort an.
+
+Wer das Passwortfeld leer lässt, erhält beim ersten Start ein Zufallspasswort. Du kannst es im Serverterminal mit `docker exec foto-upload cat /data/.initial-admin-password` auslesen.
+
+## 2. Mit Git und Docker Compose
 
 Die Befehle gehören in das Terminal des Linux- oder CasaOS-Servers. Prüfe zuerst, ob Docker läuft und Compose v2 verfügbar ist.
 
@@ -24,9 +33,9 @@ docker compose exec -T foto-upload cat /data/.initial-admin-password
 
 Den letzten Befehl im Terminal des Servers ausführen und das angezeigte **Erstpasswort** für die Anmeldung verwenden. Der Datenordner `./data` liegt neben `compose.yaml` und wird beim ersten Start angelegt. Anschließend weiter bei **Erste Anmeldung und QR-Code**.
 
-## 2. In CasaOS mit dem fertigen Image
+## 3. Direkt aus den Release-Dateien
 
-1. Im Terminal des CasaOS-Servers `uname -m` ausführen. Für `x86_64` das Docker-Archiv **amd64**, für `aarch64` oder `arm64` das Archiv **arm64** herunterladen. Außerdem `foto-upload-casaos.yaml` herunterladen und auf dem Computer öffnen, von dem aus du CasaOS bedienst. [Downloads für Foto-Upload 3.0.0](https://github.com/ThomS263/foto_upload_offiziel/releases/tag/v3.0.0)
+1. Im Terminal des Servers `uname -m` ausführen. Für `x86_64` das Archiv **amd64**, für `aarch64` oder `arm64` das Archiv **arm64** wählen. Außerdem die Import-YAML für das lokale Image laden. [Archiv AMD64](https://github.com/ThomS263/foto_upload_offiziel/releases/download/v3.0.0/foto-upload-3.0.0-linux-amd64.tar.gz) · [Archiv ARM64](https://github.com/ThomS263/foto_upload_offiziel/releases/download/v3.0.0/foto-upload-3.0.0-linux-arm64.tar.gz) · [Import-YAML für geladenes Image](https://github.com/ThomS263/foto_upload_offiziel/releases/download/v3.0.0/foto-upload-casaos.yaml)
 2. Das Docker-Archiv auf den Server übertragen. Dort im Ordner mit dem Download den passenden Befehl ausführen. Das Image wird in die lokale Docker-Installation geladen.
 
    ~~~bash
@@ -55,7 +64,7 @@ docker exec foto-upload cat /data/.initial-admin-password
 
 Die Datei `SHA256SUMS` im Release enthält die Prüfsummen der Downloads. Zum Vergleich für eine einzelne Datei z. B. `sha256sum foto-upload-3.0.0-linux-amd64.tar.gz` ausführen.
 
-## 3. Direkt mit Python
+## 4. Direkt mit Python
 
 Für Linux mit Python 3.12 und Unterstützung für virtuelle Umgebungen. Der folgende Befehl startet den Webserver im Vordergrund.
 
@@ -94,7 +103,7 @@ In CasaOS lässt sich `PHOTO_PUBLIC_URL` in den App-Einstellungen ändern. Den H
 | `no configuration file provided` | Für den Git-Weg in den Ordner mit `compose.yaml` wechseln. Für den Release-Download ausdrücklich `docker compose -f foto-upload-casaos.yaml` verwenden. |
 | `unknown flag: --wait` | `docker compose up -d --build` ausführen. Bei der Release-YAML `docker compose -f foto-upload-casaos.yaml up -d --pull never` verwenden. Sobald `docker compose ps` bzw. `docker ps` den Container als `healthy` zeigt, das Erstpasswort lesen. |
 | `port is already allocated` | Für die Git-Installation `PHOTO_PORT=8081` in `.env` setzen und Compose erneut starten. Bei der CasaOS-YAML den veröffentlichten Port auf `8081` setzen. Die Seite anschließend über diesen Port öffnen. |
-| `denied` beim Abruf des Images | Das Docker-Archiv für die eigene Architektur aus dem öffentlichen Release mit `docker load --input DATEINAME.tar.gz` laden und den Terminal-Befehl mit `--pull never` aus Variante 2 verwenden. |
+| `denied` beim Abruf des Images | Das Docker-Archiv für die eigene Architektur aus dem öffentlichen Release mit `docker load --input DATEINAME.tar.gz` laden und den Terminal-Befehl mit `--pull never` aus Variante 3 verwenden. |
 | Erstpasswort-Datei fehlt | Beim Erststart warten, bis der Container `healthy` meldet. Wurde `PHOTO_ADMIN_PASSWORD` gesetzt oder das Passwort bereits geändert, mit diesem Passwort anmelden. |
 
 ## Betrieb, Update und Sicherung
