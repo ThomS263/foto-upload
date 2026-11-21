@@ -1,7 +1,7 @@
 name: foto-upload
 services:
   foto-upload:
-    image: ghcr.io/thoms263/foto_upload_offiziel:3.0.3
+    image: ghcr.io/thoms263/foto_upload_offiziel:3.0.4
     container_name: foto-upload
     restart: unless-stopped
     security_opt:
@@ -59,13 +59,13 @@ x-casaos:
   category: Media
   author: ThomS263
   developer: ThomS263
-  version: "3.0.3"
-  icon: https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.3/Apps/FotoUpload/icon.png
-  thumbnail: https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.3/Apps/FotoUpload/thumbnail.png
+  version: "3.0.4"
+  icon: https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.4/Apps/FotoUpload/icon.png
+  thumbnail: https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.4/Apps/FotoUpload/thumbnail.png
   screenshot_link:
-    - https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.3/Apps/FotoUpload/screenshot-1.png
-    - https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.3/Apps/FotoUpload/screenshot-2.png
+    - https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.4/Apps/FotoUpload/screenshot-1.png
+    - https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.4/Apps/FotoUpload/screenshot-2.png
   tips:
     before_install:
-      en_US: Open /admin to create your first album. With no initial password configured, read /data/.initial-admin-password in the container. For guests outside the LAN, set PHOTO_PUBLIC_URL to the existing public address.
-      de_DE: Öffne /admin und lege das erste Album an. Das automatisch erzeugte Erstpasswort steht im Container unter /data/.initial-admin-password. Für Gäste außerhalb des Heimnetzes trage die vorhandene öffentliche Adresse als PHOTO_PUBLIC_URL ein.
+      en_US: Open /admin to create your first album and enter a Funnel URL. The /data container path is already configured and must not be changed. With no initial password configured, read /data/.initial-admin-password in the container.
+      de_DE: Öffne /admin, lege das erste Album an und trage dort bei Bedarf die Funnel-Adresse ein. Der Containerpfad /data ist bereits korrekt und darf unverändert bleiben. Das automatisch erzeugte Erstpasswort steht im Container unter /data/.initial-admin-password.

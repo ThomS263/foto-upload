@@ -145,6 +145,24 @@ function renderAlbums() {
 byId("album-search").addEventListener("input", renderAlbums);
 byId("album-sort").addEventListener("change", renderAlbums);
 loadStorage();
+const publicUrl = byId("public-url");
+json("/admin/api/public-url").then(data => { publicUrl.elements.url.value = data.url || ""; })
+  .catch(error => { publicUrl.querySelector("[role=status]").textContent = error.message; });
+publicUrl.onsubmit = event => {
+  event.preventDefault();
+  act(publicUrl, async () => {
+    const data = await request("/admin/api/public-url", "PUT", {url: publicUrl.elements.url.value});
+    publicUrl.elements.url.value = data.url;
+    return data.url ? "Gespeichert. Neue QR-Codes verwenden diese Adresse." : "Eigene Adresse entfernt.";
+  });
+};
+byId("test-public-url").onclick = () => {
+  const value = publicUrl.elements.url.value.trim().replace(/\/$/, "");
+  const status = publicUrl.querySelector("[role=status]");
+  if (!value.startsWith("https://")) { status.textContent = "Bitte zuerst eine HTTPS-Adresse eingeben."; return; }
+  window.open(value + "/health?ready=1", "_blank", "noopener");
+  status.textContent = "Der Erreichbarkeitstest wurde in einem neuen Fenster geöffnet.";
+};
 json("/admin/api/version").then(data => {
   const current = data.current.split(".").map(Number);
   const latest = (data.latest || "").split(".").map(Number);

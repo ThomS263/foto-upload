@@ -156,11 +156,21 @@ class AlbumsTest(unittest.TestCase):
         self.assertEqual(decoded(self.client.get("/qr.png").data), "https://alben.example/")
         self.assertEqual(decoded(self.client.get("/qr/sommer.png").data), "https://alben.example/")
         manager = self.admin()
+        self.assertEqual(manager.get("/admin/api/public-url").json["url"], "https://alben.example")
+        self.assertEqual(
+            manager.put("/admin/api/public-url", json={"url": "http://unsafe.example"}).status_code,
+            400,
+        )
+        self.assertEqual(
+            manager.put("/admin/api/public-url", json={"url": "https://funnel.example/"}).status_code,
+            200,
+        )
+        self.assertEqual(decoded(manager.get("/qr.png").data), "https://funnel.example/")
         manager.put("/admin/api/events/sommer", json={"public_access": True})
         other = self.app.test_client()
         self.assertEqual(other.get("/qr/sommer.png").status_code, 401)
         link = urlsplit(decoded(manager.get("/qr/sommer.png").data))
-        self.assertEqual((link.netloc, link.path), ("alben.example", "/event/sommer"))
+        self.assertEqual((link.netloc, link.path), ("funnel.example", "/event/sommer"))
         result = other.get(link.path + "?" + link.query)
         self.assertEqual(result.status_code, 303)
         self.assertNotIn("access=", result.headers["Location"])

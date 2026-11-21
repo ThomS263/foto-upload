@@ -90,6 +90,7 @@ class Store:
         self.catalog = self.root / ".events.json"
         self.admin_file = self.root / ".admin_password_hash"
         self.bootstrap = self.root / ".initial-admin-password"
+        self.public_url_file = self.root / ".public-url"
         self.configured_hash = configured_hash
         with self.transaction():
             secret_file = self.root / ".secret"
@@ -187,6 +188,18 @@ class Store:
 
     def admin_hash(self):
         return self.configured_hash or self.admin_file.read_text().strip()
+
+    def public_url(self, fallback=""):
+        if self.public_url_file.exists():
+            return self.public_url_file.read_text(encoding="utf-8").strip()
+        return fallback
+
+    def set_public_url(self, value):
+        with self.transaction():
+            if value:
+                atomic_text(self.public_url_file, value + "\n")
+            else:
+                self.public_url_file.unlink(missing_ok=True)
 
     def rotate_admin(self, password):
         if self.configured_hash:

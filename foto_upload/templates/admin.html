@@ -13,6 +13,14 @@
   </div>
   <p id="admin-status" role="status" aria-live="polite"></p><div id="manage" class="album-list"></div>
 </section><div class="admin-side">
+  <details class="panel" open><summary>Öffentliche Adresse &amp; QR-Codes</summary>
+    <form id="public-url"><label>Funnel- oder HTTPS-Adresse
+      <input name="url" type="url" inputmode="url" placeholder="https://mein-server.example.ts.net">
+    </label>
+    <p>Hier kannst du deine Tailscale-Funnel-Adresse direkt eintragen. CasaOS-Containerpfade müssen dafür nicht geändert werden.</p>
+    <button class="primary">Adresse speichern</button><button type="button" id="test-public-url">Adresse testen</button>
+    <p role="status"></p></form>
+  </details>
   <details class="panel" id="create"><summary>Album anlegen</summary><form id="new-album">
     <label>Albumname<input name="title" required maxlength="80"></label>
     <label>Albumadresse<input name="slug" required maxlength="64" pattern="[a-z0-9][a-z0-9\-]*" placeholder="sommerurlaub"></label>

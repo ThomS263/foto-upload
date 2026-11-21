@@ -80,7 +80,8 @@ def serializer():
 
 
 def share_target(slug=None, event=None):
-    base = (current_app.config["PUBLIC_URL"] or request.host_url).rstrip("/")
+    base = storage().public_url(current_app.config["PUBLIC_URL"])
+    base = (base or request.host_url).rstrip("/")
     if event and event["public_access"]:
         token = serializer().dumps({"event": slug, "public": True, "revision": event["revision"]})
         return base + url_for("pages.album", slug=slug) + "?" + urlencode({"access": token})

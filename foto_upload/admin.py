@@ -7,6 +7,7 @@ import time
 import zipfile
 from pathlib import Path
 from urllib.error import URLError
+from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 from flask import (
@@ -27,7 +28,7 @@ from .storage import Problem, directory, locked, read_json, safe_name, write_jso
 from .views import admin_ok, admin_stamp, payload, require_admin, share_target, storage
 
 admin = Blueprint("admin", __name__, url_prefix="/admin")
-VERSION = "3.0.3"
+VERSION = "3.0.4"
 
 
 @admin.route("", methods=["GET", "POST"])
@@ -79,6 +80,29 @@ def disk_space():
     require_admin()
     usage = shutil.disk_usage(storage().root)
     return jsonify(total=usage.total, free=usage.free, reserve=current_app.config["MIN_FREE_BYTES"])
+
+
+@admin.route("/api/public-url", methods=["GET", "PUT"])
+def public_url():
+    require_admin()
+    if request.method == "GET":
+        configured = storage().public_url(current_app.config["PUBLIC_URL"])
+        return jsonify(url=configured, managed=bool(current_app.config["PUBLIC_URL"]))
+    value = str((request.get_json(silent=True) or {}).get("url", "")).strip().rstrip("/")
+    if value:
+        parsed = urlsplit(value)
+        if (
+            parsed.scheme != "https"
+            or not parsed.hostname
+            or parsed.username
+            or parsed.password
+            or parsed.path not in {"", "/"}
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise Problem("Bitte eine vollständige HTTPS-Adresse ohne zusätzlichen Pfad eingeben.")
+    storage().set_public_url(value)
+    return jsonify(ok=True, url=value)
 
 
 @admin.get("/api/version")
