@@ -208,6 +208,7 @@ async function run(job) {
     job.status.textContent = "✓ Gespeichert";
     job.state = "ok";
   } catch (error) {
+    job.recoverable = !error.status || error.status >= 500;
     job.status.textContent = error.message;
     job.retry.hidden = false;
     job.state = "failed";
@@ -235,8 +236,14 @@ window.addEventListener("beforeunload", event => {
   if (running) { event.preventDefault(); event.returnValue = ""; }
 });
 document.addEventListener("visibilitychange", keepAwake);
-function network() { byId("network").hidden = navigator.onLine; }
+function network() {
+  byId("network").hidden = navigator.onLine;
+  if (navigator.onLine) queue.filter(job => job.state === "failed" && job.recoverable).forEach(reset);
+}
 window.addEventListener("online", network);
 window.addEventListener("offline", network);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && navigator.onLine) queue.filter(job => job.state === "failed" && job.recoverable).forEach(reset);
+});
 network();
 loadGallery();

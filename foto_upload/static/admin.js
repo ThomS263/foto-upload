@@ -146,13 +146,21 @@ byId("album-search").addEventListener("input", renderAlbums);
 byId("album-sort").addEventListener("change", renderAlbums);
 loadStorage();
 const publicUrl = byId("public-url");
-json("/admin/api/public-url").then(data => { publicUrl.elements.url.value = data.url || ""; })
+json("/admin/api/public-url").then(data => {
+  publicUrl.elements.url.value = data.url || "";
+  byId("public-url-state").textContent = data.url
+    ? "✓ Öffentliche Adresse ist eingerichtet. Neue QR-Codes verwenden sie."
+    : "Noch keine öffentliche Adresse eingerichtet. QR-Codes verwenden die aktuell geöffnete Adresse.";
+})
   .catch(error => { publicUrl.querySelector("[role=status]").textContent = error.message; });
 publicUrl.onsubmit = event => {
   event.preventDefault();
   act(publicUrl, async () => {
     const data = await request("/admin/api/public-url", "PUT", {url: publicUrl.elements.url.value});
     publicUrl.elements.url.value = data.url;
+    byId("public-url-state").textContent = data.url
+      ? "✓ Öffentliche Adresse ist eingerichtet."
+      : "Keine feste öffentliche Adresse eingerichtet.";
     return data.url ? "Gespeichert. Neue QR-Codes verwenden diese Adresse." : "Eigene Adresse entfernt.";
   });
 };
