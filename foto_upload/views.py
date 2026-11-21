@@ -170,9 +170,10 @@ def qr(slug=None):
 
 @pages.get("/health")
 def health():
+    from .admin import VERSION
     from .media import files_in
 
-    status = {"ok": True, "gallery": True, "version": "3.0.3"}
+    status = {"ok": True, "gallery": True, "version": VERSION}
     if request.args.get("ready") != "1":
         store = storage()
         status["files"] = {
