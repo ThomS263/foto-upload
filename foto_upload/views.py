@@ -120,7 +120,20 @@ def album(slug):
         return redirect(url_for(".album", slug=slug), 303)
     if not guest_ok(slug, event):
         return render_template("login.html", event=event, slug=slug, share=share_target())
+    event = dict(event)
+    event["has_cover"] = (storage().folder(event) / ".cover.jpg").is_file()
     return render_template("album.html", event=event, slug=slug, share=share_target())
+
+
+@pages.get("/event/<slug>/cover.jpg")
+def cover(slug):
+    event = active(slug)
+    if not event:
+        abort(404)
+    path = storage().folder(event) / ".cover.jpg"
+    if not path.is_file() or path.is_symlink():
+        abort(404)
+    return send_file(path, mimetype="image/jpeg", conditional=True)
 
 
 @pages.post("/gallery/login")

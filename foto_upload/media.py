@@ -226,6 +226,8 @@ def publish(folder, job, state):
 
 def receive(chunked):
     slug, event = guest()
+    if not event.get("allow_upload", True):
+        raise Problem("Uploads sind für dieses Album geschlossen.", 403)
     store = storage()
     prune_uploads(store)
     item = request.files.get("chunk" if chunked else "file")
@@ -325,6 +327,8 @@ def upload_status(identifier):
 @media.get("/gallery/list")
 def gallery_list():
     slug, event = guest()
+    if not event.get("allow_gallery", True):
+        raise Problem("Die Galerie ist für dieses Album nicht freigegeben.", 403)
     folder = storage().folder(event)
     names = read_names(folder)
     items = []
@@ -353,6 +357,10 @@ def gallery_list():
 @media.get("/gallery/file/<path:fn>")
 def original(fn):
     _, event = guest()
+    if not event.get("allow_gallery", True):
+        abort(403)
+    if request.args.get("dl") == "1" and not event.get("allow_download", True):
+        raise Problem("Downloads sind für dieses Album nicht freigegeben.", 403)
     path = media_file(storage().folder(event), fn)
     return send_file(path, as_attachment=request.args.get("dl") == "1", conditional=True)
 
@@ -360,6 +368,8 @@ def original(fn):
 @media.get("/gallery/thumb/<path:fn>")
 def thumbnail(fn):
     _, event = guest()
+    if not event.get("allow_gallery", True):
+        abort(403)
     store = storage()
     folder = store.folder(event)
     path = media_file(folder, fn)
@@ -421,6 +431,8 @@ def zip_response(entries, download):
 @media.route("/gallery/zip", methods=["GET", "POST"])
 def gallery_zip():
     slug, event = guest()
+    if not event.get("allow_download", True):
+        raise Problem("Downloads sind für dieses Album nicht freigegeben.", 403)
     folder = storage().folder(event)
     store = storage()
     if request.method == "GET":

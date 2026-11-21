@@ -82,6 +82,7 @@ function report() {
   summary.textContent = queue.length ? done + " von " + queue.length + " gespeichert" +
     (failed ? " · " + failed + " fehlgeschlagen" : "") : "";
   byId("retry-all").hidden = failed === 0;
+  try { window.AndroidUpload?.setActive(running > 0, running); } catch { /* Browser ohne Android-Brücke. */ }
 }
 
 function send(path, data, update) {

@@ -22,6 +22,12 @@
     <button class="primary">Adresse speichern</button><button type="button" id="test-public-url">Adresse testen</button>
     <p role="status"></p></form>
   </details>
+  <details class="panel"><summary>Sicherheit, Funnel &amp; Updates</summary>
+    <p id="security-status" role="status">Diagnose wird geladen …</p>
+    <ul id="security-issues"></ul>
+    <label>Update-Befehl<input id="update-command" readonly></label>
+    <div class="actions"><button type="button" id="copy-update">Befehl kopieren</button><button type="button" id="reload-diagnostics">Neu prüfen</button></div>
+  </details>
   <details class="panel" id="create"><summary>Album anlegen</summary><form id="new-album">
     <label>Albumname<input name="title" required maxlength="80"></label>
     <label>Albumadresse<input name="slug" required maxlength="64" pattern="[a-z0-9][a-z0-9\-]*" placeholder="sommerurlaub"></label>
@@ -45,8 +51,14 @@
   <details class="panel editor"><summary><strong data-title></strong><small data-info></small></summary>
     <form><label>Albumname<input name="title" required maxlength="80"></label>
       <label>Beschreibung<input name="subtitle" maxlength="180"></label>
+      <label>Datum<input name="event_date" type="date"></label>
+      <label>Farbe<select name="tone"><option value="green">Grün</option><option value="blue">Blau</option><option value="rose">Rosa</option><option value="gold">Gold</option></select></label>
+      <label>Titelbild <small>(optional)</small><input name="cover" type="file" accept="image/*"></label>
       <label>Neues Albumpasswort<input name="password" type="password" maxlength="256" autocomplete="new-password" placeholder="Für Passwortwechsel ausfüllen"></label>
       <label class="check"><input name="public_access" type="checkbox">Gästelink ohne Passwort freigeben</label>
+      <label class="check"><input name="allow_upload" type="checkbox">Gäste dürfen hochladen</label>
+      <label class="check"><input name="allow_gallery" type="checkbox">Gäste dürfen die Galerie sehen</label>
+      <label class="check"><input name="allow_download" type="checkbox">Gäste dürfen herunterladen</label>
       <label>Gästelink gültig bis <small>(optional)</small><input name="share_expires" type="datetime-local"></label>
       <div class="actions"><button class="primary">Speichern</button><button type="button" data-archive></button></div>
       <p role="status"></p></form>

@@ -7,9 +7,9 @@
 <div id="album" data-event="{{ slug }}" data-limit="{{ config.MAX_FILE_BYTES }}">
   <div class="album-nav"><a class="back" href="/">← Alle Alben</a>
     <form action="{{ url_for('pages.leave') }}" method="post"><button class="quiet">Abmelden</button></form></div>
-  <header class="pagehead"><h1>{{ event.title }}</h1>{% if event.subtitle %}<p>{{ event.subtitle }}</p>{% endif %}</header>
+  <header class="pagehead album-head tone-{{ event.tone }}">{% if event.has_cover %}<img src="{{ url_for('pages.cover', slug=slug) }}" alt="Titelbild des Albums">{% endif %}<div><h1>{{ event.title }}</h1>{% if event.subtitle %}<p>{{ event.subtitle }}</p>{% endif %}{% if event.event_date %}<p>📅 {{ event.event_date }}</p>{% endif %}</div></header>
   <div class="columns album-columns">
-    <section class="panel upload" id="upload"><div class="row"><h2>Fotos hinzufügen</h2><a href="#galerie">Zur Galerie ↓</a></div>
+    <section class="panel upload" id="upload"{% if not event.allow_upload %} hidden{% endif %}><div class="row"><h2>Fotos hinzufügen</h2><a href="#galerie">Zur Galerie ↓</a></div>
       <label for="who">Dein Name <small>(optional)</small></label>
       <input id="who" autocomplete="given-name" maxlength="40" placeholder="Name im Album">
       <div class="actions">
@@ -25,19 +25,21 @@
     </section>
     {% include "share.html" %}
   </div>
-  <section id="galerie" class="gallery"><div class="row"><h2>Galerie <span id="gcount" class="count">…</span></h2>
+  <section id="galerie" class="gallery"{% if not event.allow_gallery %} hidden{% endif %}><div class="row"><h2>Galerie <span id="gcount" class="count">…</span></h2>
     <button id="refresh">Aktualisieren</button></div>
     <div class="gallery-tools">
+      <label>Suche<input id="gallery-search" type="search" placeholder="Name oder Datei"></label>
       <label><span id="filter-name">Person</span><select id="filter" aria-labelledby="filter-name"><option>Alle Personen</option></select></label>
+      <label>Typ<select id="gallery-type"><option value="*">Fotos &amp; Videos</option><option value="image">Nur Fotos</option><option value="video">Nur Videos</option></select></label>
       <label>Sortieren<select id="gallery-sort"><option value="new">Neueste Uploads</option><option value="old">Älteste Uploads</option><option value="taken">Aufnahmedatum</option></select></label>
-      <button id="select-all" disabled>Alle wählen</button><button id="download-selection" disabled>Auswahl als ZIP</button>
-      <button id="download-all" disabled>Alle als ZIP</button>
+      <button id="select-all" disabled>Alle wählen</button><button id="download-selection"{% if not event.allow_download %} hidden{% endif %} disabled>Auswahl als ZIP</button>
+      <button id="download-all"{% if not event.allow_download %} hidden{% endif %} disabled>Alle als ZIP</button>
     </div>
     <p id="gallery-status" role="status">Galerie wird geladen …</p><div id="grid" class="grid"></div>
     <button id="more-files" hidden>Weitere Dateien anzeigen</button>
   </section>
   <dialog id="viewer" aria-label="Großansicht"><div class="viewer-head"><span id="caption"></span><button id="close-viewer" autofocus>Schließen</button></div>
-    <div id="stage"></div><div class="viewer-actions"><button id="prev">← Zurück</button><a class="button" id="original" download>Original laden</a><button id="next">Weiter →</button></div>
+    <div id="stage"></div><div class="viewer-actions"><button id="prev">← Zurück</button><span>Bild antippen zum Vergrößern</span><a class="button" id="original"{% if not event.allow_download %} hidden{% endif %} download>Original laden</a><button id="next">Weiter →</button></div>
   </dialog>
 </div>
 {% endblock %}

@@ -136,6 +136,11 @@ class Store:
             event.setdefault("subtitle", "")
             event.setdefault("archived", False)
             event.setdefault("public_access", False)
+            event.setdefault("allow_upload", True)
+            event.setdefault("allow_gallery", True)
+            event.setdefault("allow_download", True)
+            event.setdefault("event_date", "")
+            event.setdefault("tone", "green")
             event.setdefault("revision", 0)
             self.prepare(event)
         for folder in sorted(self.uploads.iterdir()):
@@ -222,6 +227,11 @@ class Store:
                     "folder": slug,
                     "archived": False,
                     "public_access": False,
+                    "allow_upload": True,
+                    "allow_gallery": True,
+                    "allow_download": True,
+                    "event_date": "",
+                    "tone": "green",
                     "revision": 0,
                     "subtitle": "",
                 }
@@ -247,6 +257,16 @@ class Store:
                     event["title"] = title
                 if "subtitle" in values:
                     event["subtitle"] = plain(values["subtitle"], 180)
+                if "event_date" in values:
+                    date = plain(values["event_date"], 10)
+                    if date and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+                        raise Problem("Ungültiges Veranstaltungsdatum.")
+                    event["event_date"] = date
+                if "tone" in values:
+                    tone = plain(values["tone"], 12)
+                    if tone not in {"green", "blue", "rose", "gold"}:
+                        raise Problem("Ungültige Albumfarbe.")
+                    event["tone"] = tone
                 if "password" in values:
                     event["password_hash"] = generate_password_hash(
                         password_value(values["password"])
@@ -260,6 +280,12 @@ class Store:
                     if enabled != event["public_access"]:
                         event["public_access"] = enabled
                         event["revision"] += 1
+                for permission in ("allow_upload", "allow_gallery", "allow_download"):
+                    if permission in values:
+                        enabled = values[permission]
+                        if not isinstance(enabled, bool):
+                            raise Problem("Ungültige Albumberechtigung.")
+                        event[permission] = enabled
                 if "share_expires" in values:
                     expiry = values["share_expires"]
                     if not isinstance(expiry, int) or isinstance(expiry, bool) or expiry < 0:

@@ -89,6 +89,23 @@ class AlbumsTest(unittest.TestCase):
         self.client.post("/leave")
         self.assertEqual(self.client.get("/gallery/list").status_code, 401)
 
+    def test_album_permissions_style_and_diagnostics(self):
+        manager = self.admin()
+        response = manager.put("/admin/api/events/sommer", json={
+            "event_date": "2027-05-04", "tone": "blue", "allow_upload": False,
+            "allow_gallery": False, "allow_download": False,
+        })
+        self.assertEqual(response.status_code, 200)
+        album = manager.get("/admin/api/events").json[0]
+        self.assertEqual((album["event_date"], album["tone"]), ("2027-05-04", "blue"))
+        guest = self.enter(self.app.test_client())
+        self.assertEqual(guest.get("/gallery/list").status_code, 403)
+        self.assertEqual(guest.post("/upload").status_code, 403)
+        self.assertEqual(guest.post("/gallery/zip", data={"all": "1"}).status_code, 403)
+        diagnostics = manager.get("/admin/api/diagnostics")
+        self.assertEqual(diagnostics.status_code, 200)
+        self.assertIn("docker compose", diagnostics.json["update_command"])
+
     def test_clean_install_and_password_rotation(self):
         clean = self.root / "fresh"
         app = create_app(dict(self.config, DATA_DIR=clean, ADMIN_PASSWORD="", SEED_EVENTS={}))

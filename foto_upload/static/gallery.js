@@ -56,7 +56,10 @@ function tile(item, index) {
 }
 
 function render() {
-  visible = items.filter(item => filter.value === "*" || item.n === filter.value.slice(1));
+  const query = byId("gallery-search").value.trim().toLocaleLowerCase("de");
+  const type = byId("gallery-type").value;
+  visible = items.filter(item => (filter.value === "*" || item.n === filter.value.slice(1)) &&
+    (type === "*" || item.k === type) && (item.f + " " + item.n).toLocaleLowerCase("de").includes(query));
   if (byId("gallery-sort").value === "old") visible.reverse();
   if (byId("gallery-sort").value === "taken") visible.sort((a, b) => b.taken - a.taken || a.f.localeCompare(b.f));
   byId("gcount").textContent = String(visible.length);
@@ -112,6 +115,7 @@ function show(index) {
     }
   };
   node.src = item.url;
+  node.onclick = () => node.classList.toggle("zoomed");
   stage.replaceChildren(node);
   byId("caption").textContent = (index + 1) + " / " + visible.length + (item.n ? " · Von " + item.n : "");
   byId("original").href = item.dl;
@@ -122,6 +126,8 @@ function show(index) {
 function step(offset) { if (visible.length) show((current + offset + visible.length) % visible.length); }
 byId("refresh").onclick = loadGallery;
 filter.onchange = () => { displayed = 60; render(); };
+byId("gallery-search").oninput = () => { displayed = 60; render(); };
+byId("gallery-type").onchange = () => { displayed = 60; render(); };
 byId("gallery-sort").onchange = () => { displayed = 60; render(); };
 byId("more-files").onclick = () => { displayed += 60; render(); };
 byId("select-all").onclick = () => {

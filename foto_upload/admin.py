@@ -23,12 +23,12 @@ from flask import (
 )
 from werkzeug.security import check_password_hash
 
-from .media import files_in, media_file, read_names, zip_chunks, zip_response
+from .media import files_in, media_file, preview, read_names, zip_chunks, zip_response
 from .storage import Problem, directory, locked, read_json, safe_name, write_json
 from .views import admin_ok, admin_stamp, payload, require_admin, share_target, storage
 
 admin = Blueprint("admin", __name__, url_prefix="/admin")
-VERSION = "3.0.5"
+VERSION = "3.1.0"
 
 
 @admin.route("", methods=["GET", "POST"])
@@ -123,6 +123,40 @@ def version():
     return jsonify(result)
 
 
+@admin.get("/api/diagnostics")
+def diagnostics():
+    require_admin()
+    store = storage()
+    public = store.public_url(current_app.config["PUBLIC_URL"])
+    usage = shutil.disk_usage(store.root)
+    backup_status = store.root / ".backup-status.json"
+    backup = read_json(backup_status) if backup_status.exists() else {}
+    issues = []
+    if not public:
+        issues.append("Keine feste öffentliche HTTPS-Adresse für QR-Codes eingerichtet.")
+    elif not public.startswith("https://"):
+        issues.append("Die öffentliche Adresse verwendet kein HTTPS.")
+    if usage.free <= current_app.config["MIN_FREE_BYTES"] * 2:
+        issues.append("Der freie Speicher wird knapp.")
+    if not backup.get("success"):
+        issues.append("Noch keine erfolgreiche automatische Sicherung vorhanden.")
+    expired = sum(
+        1 for event in store.events().values()
+        if event.get("share_expires") and event["share_expires"] <= time.time()
+    )
+    if expired:
+        issues.append(f"{expired} abgelaufene Gästefreigabe(n) können deaktiviert werden.")
+    return jsonify(
+        public_url=public,
+        https=bool(public and public.startswith("https://")),
+        free=usage.free,
+        backup=backup.get("success", 0),
+        expired=expired,
+        issues=issues,
+        update_command="cd foto-upload && git pull --ff-only origin main && docker compose up -d --build --wait",
+    )
+
+
 @admin.get("/api/events/<slug>/files")
 def album_files(slug):
     require_admin()
@@ -196,14 +230,16 @@ def albums():
     results = []
     for slug, event in store.events().items():
         folder = store.folder(event)
-        sizes = [p.stat().st_size for p in files_in(folder)]
-        result = {
-            key: event[key] for key in ("title", "subtitle", "folder", "archived", "public_access")
-        }
+        stats = [p.stat() for p in files_in(folder)]
+        result = {key: event[key] for key in (
+            "title", "subtitle", "folder", "archived", "public_access", "allow_upload",
+            "allow_gallery", "allow_download", "event_date", "tone"
+        )}
         result.update(
             slug=slug,
-            files=len(sizes),
-            bytes=sum(sizes),
+            files=len(stats),
+            bytes=sum(item.st_size for item in stats),
+            latest=max((int(item.st_mtime) for item in stats), default=0),
             orphan_thumbs=sum(1 for _ in orphan_previews(folder)),
             needs_password=event.get("needs_password", False),
             share_expires=event.get("share_expires", 0),
@@ -221,6 +257,22 @@ def edit(slug):
         storage().change(slug, {}, "archive")
     else:
         storage().change(slug, payload(), "edit")
+    return jsonify(ok=True)
+
+
+@admin.post("/api/events/<slug>/cover")
+def event_cover(slug):
+    require_admin()
+    event = storage().events().get(slug)
+    if not event:
+        raise Problem("Album nicht gefunden.", 404)
+    image = request.files.get("cover")
+    if not image or not image.filename:
+        raise Problem("Bitte ein Titelbild auswählen.")
+    target = storage().folder(event) / ".cover.jpg"
+    with locked(storage().locks / ("cover-" + slug)):
+        if not preview(image.stream, target):
+            raise Problem("Das Titelbild konnte nicht gelesen werden.")
     return jsonify(ok=True)
 
 
@@ -264,6 +316,7 @@ def backup_entries(store):
     for event in store.events().values():
         folder = store.folder(event)
         paths.append(folder / ".meta.jsonl")
+        paths.append(folder / ".cover.jpg")
         trash = folder / ".trash"
         if trash.is_dir() and not trash.is_symlink():
             paths.extend(files_in(trash))

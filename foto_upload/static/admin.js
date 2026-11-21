@@ -37,11 +37,16 @@ function editor(album, opened) {
   const size = new Intl.NumberFormat("de", {maximumFractionDigits: 1}).format(album.bytes / 1024 ** 2);
   const state = album.needs_password ? "Ordner gefunden · Passwort festlegen" : album.archived ? "Archiviert" : "Aktiv";
   details.querySelector("[data-info]").textContent = [album.files + (album.files === 1 ? " Datei" : " Dateien"),
-    size + " MiB", state, album.folder].join(" · ") +
+    size + " MiB", album.latest ? "Neu: " + new Date(album.latest * 1000).toLocaleString("de") : "Noch keine Uploads", state, album.folder].join(" · ") +
     (album.orphan_thumbs ? " · Verwaiste Vorschauen: " + album.orphan_thumbs : "");
   fields.title.value = album.title;
   fields.subtitle.value = album.subtitle;
+  fields.event_date.value = album.event_date || "";
+  fields.tone.value = album.tone || "green";
   fields.public_access.checked = album.public_access;
+  fields.allow_upload.checked = album.allow_upload;
+  fields.allow_gallery.checked = album.allow_gallery;
+  fields.allow_download.checked = album.allow_download;
   if (album.share_expires) {
     const date = new Date(album.share_expires * 1000);
     fields.share_expires.value = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -54,10 +59,20 @@ function editor(album, opened) {
   form.onsubmit = event => {
     event.preventDefault();
     act(form, async () => {
-      const data = {title: fields.title.value, subtitle: fields.subtitle.value, public_access: fields.public_access.checked};
+      const data = {title: fields.title.value, subtitle: fields.subtitle.value,
+        event_date: fields.event_date.value, tone: fields.tone.value,
+        public_access: fields.public_access.checked, allow_upload: fields.allow_upload.checked,
+        allow_gallery: fields.allow_gallery.checked, allow_download: fields.allow_download.checked};
       data.share_expires = fields.share_expires.value ? Math.floor(new Date(fields.share_expires.value).getTime() / 1000) : 0;
       if (fields.password.value) data.password = fields.password.value;
       await request(url, "PUT", data);
+      if (fields.cover.files[0]) {
+        const cover = new FormData();
+        cover.set("cover", fields.cover.files[0]);
+        const response = await fetch(url + "/cover", {method: "POST", body: cover});
+        if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || "Titelbild konnte nicht gespeichert werden.");
+        fields.cover.value = "";
+      }
       await load(album.slug, "Album gespeichert.");
       return "";
     });
@@ -145,6 +160,20 @@ function renderAlbums() {
 byId("album-search").addEventListener("input", renderAlbums);
 byId("album-sort").addEventListener("change", renderAlbums);
 loadStorage();
+async function diagnostics() {
+  const data = await json("/admin/api/diagnostics");
+  byId("security-status").textContent = data.issues.length
+    ? data.issues.length + " Hinweis(e) gefunden."
+    : "✓ HTTPS, Speicher und Sicherungsstatus sehen gut aus.";
+  byId("security-issues").replaceChildren(...data.issues.map(issue => element("li", issue)));
+  byId("update-command").value = data.update_command;
+}
+byId("reload-diagnostics").onclick = () => diagnostics().catch(error => { byId("security-status").textContent = error.message; });
+byId("copy-update").onclick = async () => {
+  try { await navigator.clipboard.writeText(byId("update-command").value); byId("security-status").textContent = "Update-Befehl kopiert."; }
+  catch { byId("update-command").select(); byId("security-status").textContent = "Befehl markiert – bitte kopieren."; }
+};
+diagnostics().catch(error => { byId("security-status").textContent = error.message; });
 const publicUrl = byId("public-url");
 json("/admin/api/public-url").then(data => {
   publicUrl.elements.url.value = data.url || "";

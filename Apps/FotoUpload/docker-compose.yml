@@ -1,7 +1,7 @@
 name: foto-upload
 services:
   foto-upload:
-    image: ghcr.io/thoms263/foto_upload_offiziel:3.0.5
+    image: ghcr.io/thoms263/foto_upload_offiziel:3.1.0
     container_name: foto-upload
     restart: unless-stopped
     security_opt:
@@ -59,12 +59,12 @@ x-casaos:
   category: Media
   author: ThomS263
   developer: ThomS263
-  version: "3.0.5"
-  icon: https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.5/Apps/FotoUpload/icon.png
-  thumbnail: https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.5/Apps/FotoUpload/thumbnail.png
+  version: "3.1.0"
+  icon: https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.1.0/Apps/FotoUpload/icon.png
+  thumbnail: https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.1.0/Apps/FotoUpload/thumbnail.png
   screenshot_link:
-    - https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.5/Apps/FotoUpload/screenshot-1.png
-    - https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.5/Apps/FotoUpload/screenshot-2.png
+    - https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.1.0/Apps/FotoUpload/screenshot-1.png
+    - https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.1.0/Apps/FotoUpload/screenshot-2.png
   tips:
     before_install:
       en_US: Open /admin to create your first album and enter a Funnel URL. The /data container path is already configured and must not be changed. With no initial password configured, read /data/.initial-admin-password in the container.
