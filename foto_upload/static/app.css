@@ -5,6 +5,8 @@
   font-family: "DM Sans", system-ui, sans-serif; color: var(--ink); background: var(--paper);
 }
 * { box-sizing: border-box; }
+input, select, details, form { min-width: 0; }
+input[type=file] { max-width: 100%; }
 [hidden] { display: none !important; }
 body { margin: 0; line-height: 1.5; }
 a { color: var(--pine); text-underline-offset: .2em; }
