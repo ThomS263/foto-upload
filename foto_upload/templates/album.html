@@ -32,14 +32,16 @@
       <label><span id="filter-name">Person</span><select id="filter" aria-labelledby="filter-name"><option>Alle Personen</option></select></label>
       <label>Typ<select id="gallery-type"><option value="*">Fotos &amp; Videos</option><option value="image">Nur Fotos</option><option value="video">Nur Videos</option></select></label>
       <label>Sortieren<select id="gallery-sort"><option value="new">Neueste Uploads</option><option value="old">Älteste Uploads</option><option value="taken">Aufnahmedatum</option></select></label>
+      <label>Ansicht<select id="gallery-view"><option value="grid">Kacheln</option><option value="timeline">Zeitstrahl</option><option value="map">Karte</option></select></label>
       <button id="select-all" disabled>Alle wählen</button><button id="download-selection"{% if not event.allow_download %} hidden{% endif %} disabled>Auswahl als ZIP</button>
       <button id="download-all"{% if not event.allow_download %} hidden{% endif %} disabled>Alle als ZIP</button>
+      <button id="slideshow" disabled>Diashow</button>
     </div>
     <p id="gallery-status" role="status">Galerie wird geladen …</p><div id="grid" class="grid"></div>
     <button id="more-files" hidden>Weitere Dateien anzeigen</button>
   </section>
   <dialog id="viewer" aria-label="Großansicht"><div class="viewer-head"><span id="caption"></span><button id="close-viewer" autofocus>Schließen</button></div>
-    <div id="stage"></div><div class="viewer-actions"><button id="prev">← Zurück</button><span>Bild antippen zum Vergrößern</span><a class="button" id="original"{% if not event.allow_download %} hidden{% endif %} download>Original laden</a><button id="next">Weiter →</button></div>
+    <div id="stage"></div><div class="viewer-actions"><button id="prev">← Zurück</button><button id="play">▶ Diashow</button><span id="media-info">Bild antippen zum Vergrößern</span><a class="button" id="original"{% if not event.allow_download %} hidden{% endif %} download>Original laden</a><button id="next">Weiter →</button></div>
   </dialog>
 </div>
 {% endblock %}

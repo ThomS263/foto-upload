@@ -112,6 +112,12 @@ main.wrap { padding-block: 1.6rem 4rem; }
 .preview img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .tile footer { padding: .45rem .65rem; }
 .tile footer strong { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: .85rem; }
+.timeline { grid-template-columns: 1fr; }
+.timeline-day { grid-column: 1 / -1; margin: 1rem 0 .2rem; padding-bottom: .35rem; border-bottom: 2px solid var(--line); }
+.map-list { grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); }
+.map-card { padding: 1rem; border: 1px solid var(--line); border-radius: .8rem; background: var(--panel); }
+.map-card a { display: block; font-weight: 700; overflow-wrap: anywhere; }
+.media-meta { color: var(--muted); font-size: .82rem; }
 .tile .row { margin: 0; gap: .3rem; font-size: .8rem; }
 .tile .row a { padding-block: .5rem; }
 .viewer-head, .viewer-actions { padding: .6rem; flex-wrap: wrap; }

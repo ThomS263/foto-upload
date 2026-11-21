@@ -129,6 +129,31 @@ def capture_time(path, mtime_ns, size):
     return fallback
 
 
+def _coordinate(values, reference):
+    try:
+        degrees, minutes, seconds = (float(value) for value in values)
+        result = degrees + minutes / 60 + seconds / 3600
+        return -result if str(reference).upper() in {"S", "W"} else result
+    except (TypeError, ValueError, ZeroDivisionError):
+        return None
+
+
+@lru_cache(maxsize=16384)
+def gps_position(path, mtime_ns, size):
+    if path.suffix.lower() not in IMAGE:
+        return None
+    try:
+        with Image.open(path) as picture:
+            gps = picture.getexif().get_ifd(34853)
+            latitude = _coordinate(gps.get(2), gps.get(1))
+            longitude = _coordinate(gps.get(4), gps.get(3))
+            if latitude is not None and longitude is not None:
+                return [round(latitude, 6), round(longitude, 6)]
+    except (OSError, TypeError, ValueError, SyntaxError, Image.DecompressionBombError):
+        pass
+    return None
+
+
 def preview(source, dest):
     """Keep the original untouched, auto-orient the small JPEG, bound decoded pixels."""
     try:
@@ -342,6 +367,7 @@ def gallery_list():
                 "n": names.get(path.name, ""),
                 "t": int(stat.st_mtime),
                 "taken": capture_time(path, stat.st_mtime_ns, stat.st_size),
+                "gps": gps_position(path, stat.st_mtime_ns, stat.st_size),
                 "s": stat.st_size,
                 "has_preview": path.suffix.lower() in IMAGE
                 or (folder / ".thumbs" / (path.name + ".jpg")).is_file(),

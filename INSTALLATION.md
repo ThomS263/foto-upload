@@ -6,10 +6,10 @@ Für Android gibt es zusätzlich eine Begleit-App mit QR-Scanner, Teilen-Funktio
 
 ## 1. In CasaOS über die Oberfläche
 
-1. Die verlinkte YAML im Browser öffnen und den **gesamten Text** kopieren. [CasaOS-Konfiguration für Foto-Upload 3.1.2](https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.1.2/Apps/FotoUpload/docker-compose.yml)
+1. Die verlinkte YAML im Browser öffnen und den **gesamten Text** kopieren. [CasaOS-Konfiguration für Foto-Upload 3.2.0](https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.2.0/Apps/FotoUpload/docker-compose.yml)
 2. Im CasaOS-Dashboard den **App Store → Custom Install** öffnen. Oben rechts das **Import**-Symbol wählen, die YAML einfügen und bestätigen. [CasaOS-Dokumentation](https://wiki.casaos.io/en/apps)
 3. Im Installationsdialog unter **Umgebungsvariablen** bei `PHOTO_ADMIN_PASSWORD` ein eigenes Erstpasswort eingeben. Bei einer bestehenden externen HTTPS-Adresse kannst du auch `PHOTO_PUBLIC_URL` setzen. Der Host-Port ist standardmäßig `8080`, der Datenordner auf dem Server `/DATA/AppData/foto-upload/data`.
-4. **Installieren** wählen. CasaOS lädt das Image `ghcr.io/thoms263/foto_upload_offiziel:3.1.2` für die passende Architektur. Öffne die neue Kachel **Foto-Upload**, wähle **Verwaltung** und melde dich mit deinem Erstpasswort an.
+4. **Installieren** wählen. CasaOS lädt das Image `ghcr.io/thoms263/foto_upload_offiziel:3.2.0` für die passende Architektur. Öffne die neue Kachel **Foto-Upload**, wähle **Verwaltung** und melde dich mit deinem Erstpasswort an.
 
 Wer das Passwortfeld leer lässt, erhält beim ersten Start ein Zufallspasswort. Du kannst es im Serverterminal mit `docker exec foto-upload cat /data/.initial-admin-password` auslesen.
 
@@ -37,17 +37,17 @@ Den letzten Befehl im Terminal des Servers ausführen und das angezeigte **Erstp
 
 ## 3. Direkt aus den Release-Dateien
 
-1. Im Terminal des Servers `uname -m` ausführen. Für `x86_64` das Archiv **amd64**, für `aarch64` oder `arm64` das Archiv **arm64** wählen. Außerdem die Import-YAML für das lokale Image laden. [Archiv AMD64](https://github.com/ThomS263/foto_upload_offiziel/releases/download/v3.1.2/foto-upload-3.1.2-linux-amd64.tar.gz) · [Archiv ARM64](https://github.com/ThomS263/foto_upload_offiziel/releases/download/v3.1.2/foto-upload-3.1.2-linux-arm64.tar.gz) · [Import-YAML für geladenes Image](https://github.com/ThomS263/foto_upload_offiziel/releases/download/v3.1.2/foto-upload-casaos.yaml)
+1. Im Terminal des Servers `uname -m` ausführen. Für `x86_64` das Archiv **amd64**, für `aarch64` oder `arm64` das Archiv **arm64** wählen. Außerdem die Import-YAML für das lokale Image laden. [Archiv AMD64](https://github.com/ThomS263/foto_upload_offiziel/releases/download/v3.2.0/foto-upload-3.2.0-linux-amd64.tar.gz) · [Archiv ARM64](https://github.com/ThomS263/foto_upload_offiziel/releases/download/v3.2.0/foto-upload-3.2.0-linux-arm64.tar.gz) · [Import-YAML für geladenes Image](https://github.com/ThomS263/foto_upload_offiziel/releases/download/v3.2.0/foto-upload-casaos.yaml)
 2. Das Docker-Archiv auf den Server übertragen. Dort im Ordner mit dem Download den passenden Befehl ausführen. Das Image wird in die lokale Docker-Installation geladen.
 
    ~~~bash
    # Intel- oder AMD-Server
-   docker load --input foto-upload-3.1.2-linux-amd64.tar.gz
+   docker load --input foto-upload-3.2.0-linux-amd64.tar.gz
    ~~~
 
    ~~~bash
    # 64-Bit-ARM-Server
-   docker load --input foto-upload-3.1.2-linux-arm64.tar.gz
+   docker load --input foto-upload-3.2.0-linux-arm64.tar.gz
    ~~~
 
 3. In CasaOS den **App Store → Custom Install** öffnen, **Import** wählen und den gesamten Inhalt von `foto-upload-casaos.yaml` einfügen. Den Dateipfad für den Speicher prüfen und die Installation starten. Standardmäßig speichert CasaOS unter `/DATA/AppData/foto-upload/data` und gibt Port `8080` frei. [CasaOS-Anleitung zur benutzerdefinierten Installation](https://wiki.casaos.io/en/apps)
@@ -64,7 +64,7 @@ docker compose -f foto-upload-casaos.yaml up -d --pull never --wait
 docker exec foto-upload cat /data/.initial-admin-password
 ~~~
 
-Die Datei `SHA256SUMS` im Release enthält die Prüfsummen der Downloads. Zum Vergleich für eine einzelne Datei z. B. `sha256sum foto-upload-3.1.2-linux-amd64.tar.gz` ausführen.
+Die Datei `SHA256SUMS` im Release enthält die Prüfsummen der Downloads. Zum Vergleich für eine einzelne Datei z. B. `sha256sum foto-upload-3.2.0-linux-amd64.tar.gz` ausführen.
 
 ## 4. Direkt mit Python
 

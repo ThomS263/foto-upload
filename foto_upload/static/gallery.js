@@ -9,6 +9,7 @@ let visible = [];
 let current = -1;
 let generation = 0;
 let displayed = 60;
+let slideshowTimer;
 
 function buttons() {
   byId("download-selection").disabled = !chosen.size;
@@ -16,6 +17,7 @@ function buttons() {
   byId("download-all").disabled = !items.length;
   byId("select-all").disabled = !visible.length;
   byId("select-all").textContent = visible.length && visible.every(item => chosen.has(item.f)) ? "Auswahl aufheben" : "Alle wählen";
+  byId("slideshow").disabled = !visible.length;
 }
 
 function tile(item, index) {
@@ -50,7 +52,8 @@ function tile(item, index) {
   download.href = item.dl;
   download.download = "";
   tools.append(selectLabel, download);
-  foot.append(element("strong", item.n ? "Von " + item.n : "Ohne Namen"), tools);
+  foot.append(element("small", new Date(item.taken * 1000).toLocaleDateString("de"), "media-meta"),
+    element("strong", item.n ? "Von " + item.n : "Ohne Namen"), tools);
   card.append(open, foot);
   return card;
 }
@@ -64,7 +67,29 @@ function render() {
   if (byId("gallery-sort").value === "taken") visible.sort((a, b) => b.taken - a.taken || a.f.localeCompare(b.f));
   byId("gcount").textContent = String(visible.length);
   byId("gallery-status").textContent = visible.length ? "" : "Hier sind noch keine Fotos oder Videos.";
-  grid.replaceChildren(...visible.slice(0, displayed).map(tile));
+  const view = byId("gallery-view").value;
+  grid.className = view === "timeline" ? "grid timeline" : view === "map" ? "grid map-list" : "grid";
+  if (view === "map") {
+    const located = visible.filter(item => item.gps);
+    grid.replaceChildren(...located.map(item => {
+      const card = element("article", undefined, "map-card");
+      const link = element("a", "📍 " + (item.n ? "Foto von " + item.n : item.f));
+      link.href = "https://www.openstreetmap.org/?mlat=" + item.gps[0] + "&mlon=" + item.gps[1] + "#map=16/" + item.gps[0] + "/" + item.gps[1];
+      link.target = "_blank"; link.rel = "noopener";
+      card.append(link, element("small", item.gps.join(", "), "media-meta"));
+      return card;
+    }));
+    byId("gallery-status").textContent = located.length ? located.length + " Aufnahme(n) mit Standort." : "Keine Fotos mit GPS-Standort vorhanden.";
+  } else if (view === "timeline") {
+    const nodes = [];
+    let day = "";
+    visible.slice(0, displayed).forEach((item, index) => {
+      const next = new Date(item.taken * 1000).toLocaleDateString("de", {weekday: "long", year: "numeric", month: "long", day: "numeric"});
+      if (next !== day) { day = next; nodes.push(element("h3", day, "timeline-day")); }
+      nodes.push(tile(item, index));
+    });
+    grid.replaceChildren(...nodes);
+  } else grid.replaceChildren(...visible.slice(0, displayed).map(tile));
   byId("more-files").hidden = visible.length <= displayed;
   buttons();
 }
@@ -105,6 +130,10 @@ function show(index) {
     node.controls = true;
     node.playsInline = true;
     if (item.has_preview) node.poster = item.thumb;
+    node.onloadedmetadata = () => {
+      const duration = Number.isFinite(node.duration) ? Math.round(node.duration) : 0;
+      byId("media-info").textContent = "Video" + (duration ? " · " + Math.floor(duration / 60) + ":" + String(duration % 60).padStart(2, "0") : "") + " · " + formatBytes(item.s);
+    };
   } else node.alt = item.n ? "Foto von " + item.n : "Foto";
   node.onerror = () => {
     if (item.k === "image" && node.dataset.tried !== "yes") {
@@ -118,9 +147,23 @@ function show(index) {
   node.onclick = () => node.classList.toggle("zoomed");
   stage.replaceChildren(node);
   byId("caption").textContent = (index + 1) + " / " + visible.length + (item.n ? " · Von " + item.n : "");
+  if (item.k !== "video") byId("media-info").textContent = new Date(item.taken * 1000).toLocaleString("de") + " · " + formatBytes(item.s);
   byId("original").href = item.dl;
   byId("prev").disabled = byId("next").disabled = visible.length < 2;
   if (!dialog.open) dialog.showModal();
+}
+
+function formatBytes(value) {
+  return new Intl.NumberFormat("de", {maximumFractionDigits: 1}).format(value / 1024 / 1024) + " MiB";
+}
+
+function toggleSlideshow() {
+  if (slideshowTimer) {
+    clearInterval(slideshowTimer); slideshowTimer = undefined; byId("play").textContent = "▶ Diashow";
+  } else {
+    if (!dialog.open) show(0);
+    slideshowTimer = setInterval(() => step(1), 5000); byId("play").textContent = "⏸ Pause";
+  }
 }
 
 function step(offset) { if (visible.length) show((current + offset + visible.length) % visible.length); }
@@ -128,6 +171,7 @@ byId("refresh").onclick = loadGallery;
 filter.onchange = () => { displayed = 60; render(); };
 byId("gallery-search").oninput = () => { displayed = 60; render(); };
 byId("gallery-type").onchange = () => { displayed = 60; render(); };
+byId("gallery-view").onchange = () => { displayed = 60; render(); };
 byId("gallery-sort").onchange = () => { displayed = 60; render(); };
 byId("more-files").onclick = () => { displayed += 60; render(); };
 byId("select-all").onclick = () => {
@@ -136,9 +180,11 @@ byId("select-all").onclick = () => {
   render();
 };
 byId("close-viewer").onclick = () => dialog.close();
-dialog.onclose = () => byId("stage").replaceChildren();
+dialog.onclose = () => { byId("stage").replaceChildren(); if (slideshowTimer) toggleSlideshow(); };
 byId("prev").onclick = () => step(-1);
 byId("next").onclick = () => step(1);
+byId("slideshow").onclick = toggleSlideshow;
+byId("play").onclick = toggleSlideshow;
 dialog.addEventListener("keydown", event => {
   if (event.key === "ArrowLeft") step(-1);
   if (event.key === "ArrowRight") step(1);
