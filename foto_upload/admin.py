@@ -1,5 +1,6 @@
 import os
 import secrets
+import shutil
 import tempfile
 import time
 from pathlib import Path
@@ -17,8 +18,8 @@ from flask import (
 )
 from werkzeug.security import check_password_hash
 
-from .media import files_in, zip_chunks, zip_response
-from .storage import locked, safe_name
+from .media import files_in, media_file, read_names, zip_chunks, zip_response
+from .storage import Problem, locked, safe_name
 from .views import admin_ok, admin_stamp, payload, require_admin, share_target, storage
 
 admin = Blueprint("admin", __name__, url_prefix="/admin")
@@ -65,6 +66,52 @@ def orphan_previews(folder):
         and thumb.is_file()
         and not (folder / thumb.name[:-4]).is_file()
     )
+
+
+@admin.get("/api/storage")
+def disk_space():
+    require_admin()
+    usage = shutil.disk_usage(storage().root)
+    return jsonify(total=usage.total, free=usage.free, reserve=current_app.config["MIN_FREE_BYTES"])
+
+
+@admin.get("/api/events/<slug>/files")
+def album_files(slug):
+    require_admin()
+    event = storage().events().get(slug)
+    if not event:
+        raise Problem("Album nicht gefunden.", 404)
+    folder = storage().folder(event)
+    names = read_names(folder)
+    files = []
+    for path in files_in(folder):
+        stat = path.stat()
+        files.append(
+            {
+                "name": path.name,
+                "guest": names.get(path.name, ""),
+                "size": stat.st_size,
+                "time": int(stat.st_mtime),
+            }
+        )
+    files.sort(key=lambda item: (item["time"], item["name"]), reverse=True)
+    return jsonify(files=files)
+
+
+@admin.delete("/api/events/<slug>/files/<path:filename>")
+def delete_file(slug, filename):
+    require_admin()
+    event = storage().events().get(slug)
+    if not event:
+        raise Problem("Album nicht gefunden.", 404)
+    folder = storage().folder(event)
+    with locked(folder / ".metadata.lock"):
+        path = media_file(folder, filename)
+        path.unlink()
+        thumb = folder / ".thumbs" / (filename + ".jpg")
+        if not thumb.is_symlink():
+            thumb.unlink(missing_ok=True)
+    return jsonify(ok=True)
 
 
 @admin.route("/api/events", methods=["GET", "POST"])

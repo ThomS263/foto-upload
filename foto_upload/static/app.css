@@ -114,6 +114,10 @@ dialog::backdrop { background: #11211bd9; }
 details > summary { padding-block: .35rem; min-height: 44px; cursor: pointer; font-weight: 700; overflow-wrap: anywhere; }
 details[open] > summary { margin-bottom: .6rem; }
 .share-links { display: block; overflow-wrap: anywhere; }
+.admin-files { list-style: none; padding: 0; }
+.admin-files li { display: flex; gap: .75rem; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); padding: .5rem 0; }
+.admin-files li span { min-width: 0; overflow-wrap: anywhere; }
+.media-manager { margin-top: 1rem; }
 .skip { position: fixed; left: -100vw; }
 .skip:focus { top: 5px; left: 5px; background: white; padding: .6rem; z-index: 4; }
 code { overflow-wrap: anywhere; }

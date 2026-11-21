@@ -308,6 +308,27 @@ class AlbumsTest(unittest.TestCase):
                 next((self.root / "zweiter-speicher").glob("*.zip")).read_bytes(), response.data
             )
 
+    def test_admin_file_management_and_storage(self):
+        folder = self.root / "uploads/ferien"
+        photo = folder / "urlaub.jpg"
+        photo.write_bytes(jpeg())
+        (folder / ".thumbs/urlaub.jpg.jpg").write_bytes(jpeg())
+        self.assertEqual(self.client.get("/admin/api/storage").status_code, 401)
+        self.assertEqual(
+            self.client.delete("/admin/api/events/sommer/files/urlaub.jpg").status_code, 401
+        )
+        self.admin()
+        self.assertGreater(self.client.get("/admin/api/storage").json["total"], 0)
+        self.assertEqual(
+            self.client.get("/admin/api/events/sommer/files").json["files"][0]["name"], "urlaub.jpg"
+        )
+        self.assertEqual(
+            self.client.delete("/admin/api/events/sommer/files/urlaub.jpg").status_code, 200
+        )
+        self.assertFalse(photo.exists())
+        self.assertFalse((folder / ".thumbs/urlaub.jpg.jpg").exists())
+        self.assertEqual(self.client.get("/admin/api/events/sommer/files").json["files"], [])
+
     def test_stale_partial_expiry(self):
         self.enter()
         self.chunk("f" * 32, 0, jpeg()[:16])

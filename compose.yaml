@@ -5,6 +5,9 @@ services:
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
+    labels:
+      web: "${PHOTO_PORT:-8080}"
+      index: "/"
     ports:
       - "${PHOTO_PORT:-8080}:8080"
     volumes:
@@ -15,3 +18,12 @@ services:
       PHOTO_ADMIN_PASSWORD: ${PHOTO_ADMIN_PASSWORD:-}
       PHOTO_ADMIN_PASSWORD_HASH: ${PHOTO_ADMIN_PASSWORD_HASH:-}
       PHOTO_BACKUP_DIR: ${PHOTO_BACKUP_DIR:-}
+x-casaos:
+  main: foto-upload
+  port_map: "${PHOTO_PORT:-8080}"
+  index: /
+  scheme: http
+  title:
+    en_US: Foto-Upload
+    de_DE: Foto-Upload
+  icon: https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.1/Apps/FotoUpload/icon.png

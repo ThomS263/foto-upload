@@ -1,4 +1,16 @@
-import {byId, json} from "./client.js";
+import {byId, element, json} from "./client.js";
+
+let albums = [];
+let openAlbum = null;
+const formatSize = bytes => new Intl.NumberFormat("de", {maximumFractionDigits: 1}).format(bytes / 1024 ** 3) + " GiB";
+
+async function loadStorage() {
+  try {
+    const disk = await json("/admin/api/storage");
+    byId("disk-space").textContent = formatSize(disk.free) + " von " + formatSize(disk.total) + " frei" +
+      (disk.free <= disk.reserve ? " · Zu wenig Speicher für weitere Uploads." : "");
+  } catch (error) { byId("disk-space").textContent = error.message; }
+}
 
 function request(url, method, data) {
   return json(url, {method, headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)});
@@ -55,15 +67,55 @@ function editor(album, opened) {
       return "";
     });
   };
+  details.querySelector("[data-load-files]").onclick = async () => {
+    const status = details.querySelector("[data-files-status]");
+    const list = details.querySelector("[data-files]");
+    try {
+      const data = await json(url + "/files");
+      list.replaceChildren();
+      status.textContent = data.files.length ? data.files.length + " Dateien" : "Keine Dateien vorhanden.";
+      for (const file of data.files) {
+        const row = element("li");
+        const label = element("span", file.name + (file.guest ? " · " + file.guest : ""));
+        const remove = element("button", "Löschen");
+        remove.type = "button";
+        remove.setAttribute("aria-label", file.name + " löschen");
+        remove.onclick = async () => {
+          if (!window.confirm("Datei „" + file.name + "“ dauerhaft löschen?")) return;
+          remove.disabled = true;
+          try {
+            await request(url + "/files/" + encodeURIComponent(file.name), "DELETE");
+            row.remove();
+            status.textContent = "Datei gelöscht.";
+            loadStorage();
+          } catch (error) { status.textContent = error.message; remove.disabled = false; }
+        };
+        row.append(label, remove);
+        list.append(row);
+      }
+    } catch (error) { status.textContent = error.message; }
+  };
   return details;
 }
 
 async function load(openSlug, message) {
-  const albums = await json("/admin/api/events");
-  byId("manage").replaceChildren(...albums.map(album => editor(album, album.slug === openSlug)));
+  albums = await json("/admin/api/events");
+  openAlbum = openSlug;
+  renderAlbums();
   byId("admin-status").textContent = message || (albums.length ? "" : "Es sind noch keine Alben angelegt.");
   if (!albums.length) byId("create").open = true;
 }
+
+function renderAlbums() {
+  const query = byId("album-search").value.trim().toLocaleLowerCase("de");
+  const sort = byId("album-sort").value;
+  const visible = albums.filter(album => (album.title + " " + album.folder).toLocaleLowerCase("de").includes(query));
+  visible.sort((a, b) => (sort === "files" ? b.files - a.files : sort === "size" ? b.bytes - a.bytes : 0) || a.title.localeCompare(b.title, "de"));
+  byId("manage").replaceChildren(...visible.map(album => editor(album, album.slug === openAlbum)));
+}
+byId("album-search").addEventListener("input", renderAlbums);
+byId("album-sort").addEventListener("change", renderAlbums);
+loadStorage();
 
 const create = byId("new-album");
 let autoSlug = true;
