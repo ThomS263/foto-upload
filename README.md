@@ -19,6 +19,18 @@ docker compose exec -T foto-upload cat /data/.initial-admin-password
 
 Auf dem Handy oder Computer die IP-Adresse des Servers mit Port `8080` öffnen. Unter **Verwaltung** mit dem angezeigten Passwort anmelden und **Album anlegen** wählen. Jedes Album erhält einen eigenen Ordner und ein eigenes Passwort. Originale und Einstellungen liegen im Verzeichnis `data/`.
 
+## Aktualisieren
+
+Im Terminal des Servers in den vorhandenen Projektordner wechseln und das Update starten:
+
+~~~bash
+cd foto-upload
+git pull --ff-only origin main
+docker compose up -d --build --wait
+~~~
+
+Mit `docker compose ps` lässt sich der Status prüfen. Bei einer Installation über die CasaOS-Oberfläche die App-Einstellungen öffnen und das Image auf die aktuelle Version setzen. Der Datenordner muss dabei auf den bisherigen Speicherpfad zeigen. [Weitere Hinweise zu Updates und Sicherungen](INSTALLATION.md)
+
 ![Albumübersicht mit zwei Beispielalben und einem QR-Code](Apps/FotoUpload/thumbnail.png)
 
 ## Was Gäste und Gastgeber tun können
