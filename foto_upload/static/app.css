@@ -8,6 +8,7 @@
 input, select, details, form { min-width: 0; }
 input[type=file] { max-width: 100%; }
 [hidden] { display: none !important; }
+html, body { max-width: 100%; overflow-x: hidden; }
 body { margin: 0; line-height: 1.5; }
 a { color: var(--pine); text-underline-offset: .2em; }
 button, input, select, .button, .picker { font: inherit; }
