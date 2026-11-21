@@ -9,6 +9,7 @@ import secrets
 import shutil
 import time
 import zipfile
+from contextlib import closing
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
@@ -19,6 +20,7 @@ from flask import (
     abort,
     current_app,
     jsonify,
+    redirect,
     request,
     send_file,
     session,
@@ -416,16 +418,51 @@ def zip_response(entries, download):
     return response
 
 
-@media.post("/gallery/zip")
+@media.route("/gallery/zip", methods=["GET", "POST"])
 def gallery_zip():
-    _, event = guest()
+    slug, event = guest()
     folder = storage().folder(event)
-    if request.form.get("all") == "1":
-        paths = sorted(files_in(folder))
+    store = storage()
+    if request.method == "GET":
+        ticket = request.args.get("ticket", "")
+        if not UPLOAD_ID.fullmatch(ticket):
+            abort(404)
+        with closing(store._rates()) as db:
+            db.execute(
+                "CREATE TABLE IF NOT EXISTS zip_tickets (id TEXT PRIMARY KEY, device TEXT, event TEXT, expires INTEGER, names TEXT)"
+            )
+            row = db.execute(
+                "SELECT names FROM zip_tickets WHERE id=? AND device=? AND event=? AND expires>?",
+                (ticket, session["device"], slug, int(time.time())),
+            ).fetchone()
+        if not row:
+            abort(404)
+        paths = [media_file(folder, name) for name in json.loads(row[0])]
     else:
-        paths = [media_file(folder, name) for name in dict.fromkeys(request.form.getlist("f"))]
+        if request.form.get("all") == "1":
+            paths = sorted(files_in(folder))
+        else:
+            paths = [media_file(folder, name) for name in dict.fromkeys(request.form.getlist("f"))]
     if not paths:
         raise Problem("Bitte zuerst Dateien auswählen.")
+    if request.method == "POST" and "FotoUploadAndroid/1" in request.user_agent.string:
+        ticket = secrets.token_hex(16)
+        with closing(store._rates()) as db:
+            db.execute(
+                "CREATE TABLE IF NOT EXISTS zip_tickets (id TEXT PRIMARY KEY, device TEXT, event TEXT, expires INTEGER, names TEXT)"
+            )
+            db.execute("DELETE FROM zip_tickets WHERE expires<=?", (int(time.time()),))
+            db.execute(
+                "INSERT INTO zip_tickets VALUES (?, ?, ?, ?, ?)",
+                (
+                    ticket,
+                    session["device"],
+                    slug,
+                    int(time.time()) + 900,
+                    json.dumps([p.name for p in paths]),
+                ),
+            )
+        return redirect(url_for(".gallery_zip", ticket=ticket, event=slug), 303)
     names = read_names(folder)
     entries = [
         (f"{secure_filename(names.get(p.name, '')) or 'ohne-Name'}/{p.name}", p) for p in paths

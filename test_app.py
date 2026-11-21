@@ -337,6 +337,22 @@ class AlbumsTest(unittest.TestCase):
         )
         self.assertEqual(photo.read_bytes(), jpeg())
 
+    def test_android_zip_redirect_requires_same_session(self):
+        self.enter()
+        folder = self.root / "uploads/ferien"
+        (folder / "strand.jpg").write_bytes(jpeg())
+        response = self.client.post(
+            "/gallery/zip", data={"f": "strand.jpg"}, headers={"User-Agent": "FotoUploadAndroid/1"}
+        )
+        self.assertEqual(response.status_code, 303)
+        location = response.headers["Location"]
+        self.assertEqual(self.app.test_client().get(location).status_code, 401)
+        with (
+            self.client.get(location) as downloaded,
+            zipfile.ZipFile(io.BytesIO(downloaded.data)) as archive,
+        ):
+            self.assertEqual(archive.read("ohne-Name/strand.jpg"), jpeg())
+
     def test_share_expiry_and_automatic_backup(self):
         from foto_upload.admin import automatic_backup
 

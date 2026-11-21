@@ -172,7 +172,7 @@ def qr(slug=None):
 def health():
     from .media import files_in
 
-    status = {"ok": True, "gallery": True, "version": "3.0.2"}
+    status = {"ok": True, "gallery": True, "version": "3.0.3"}
     if request.args.get("ready") != "1":
         store = storage()
         status["files"] = {

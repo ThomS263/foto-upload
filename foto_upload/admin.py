@@ -27,7 +27,7 @@ from .storage import Problem, directory, locked, read_json, safe_name, write_jso
 from .views import admin_ok, admin_stamp, payload, require_admin, share_target, storage
 
 admin = Blueprint("admin", __name__, url_prefix="/admin")
-VERSION = "3.0.2"
+VERSION = "3.0.3"
 
 
 @admin.route("", methods=["GET", "POST"])
