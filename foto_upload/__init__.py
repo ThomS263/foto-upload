@@ -2,6 +2,8 @@
 
 import errno
 import os
+import threading
+import time
 from datetime import timedelta
 from urllib.parse import urlsplit
 
@@ -63,7 +65,7 @@ def create_app(config=None):
     app.secret_key = store.secret
     app.session_interface = SessionCookies()
 
-    from .admin import admin
+    from .admin import admin, automatic_backup
     from .media import media, prune_uploads
     from .views import pages
 
@@ -71,6 +73,18 @@ def create_app(config=None):
     app.register_blueprint(media)
     app.register_blueprint(admin)
     prune_uploads(store)
+
+    if not app.config.get("TESTING"):
+
+        def backup_loop():
+            while True:
+                try:
+                    automatic_backup(app)
+                except Exception:
+                    app.logger.exception("Automatische Sicherung fehlgeschlagen")
+                time.sleep(60)
+
+        threading.Thread(target=backup_loop, daemon=True, name="automatic-backup").start()
 
     @app.before_request
     def check_origin():

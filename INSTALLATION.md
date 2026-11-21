@@ -4,10 +4,10 @@ Auf CasaOS kannst du Foto-Upload vollständig im Browser installieren. Auf einem
 
 ## 1. In CasaOS über die Oberfläche
 
-1. Die verlinkte YAML im Browser öffnen und den **gesamten Text** kopieren. [CasaOS-Konfiguration für Foto-Upload 3.0.1](https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.1/Apps/FotoUpload/docker-compose.yml)
+1. Die verlinkte YAML im Browser öffnen und den **gesamten Text** kopieren. [CasaOS-Konfiguration für Foto-Upload 3.0.2](https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.0.2/Apps/FotoUpload/docker-compose.yml)
 2. Im CasaOS-Dashboard den **App Store → Custom Install** öffnen. Oben rechts das **Import**-Symbol wählen, die YAML einfügen und bestätigen. [CasaOS-Dokumentation](https://wiki.casaos.io/en/apps)
 3. Im Installationsdialog unter **Umgebungsvariablen** bei `PHOTO_ADMIN_PASSWORD` ein eigenes Erstpasswort eingeben. Bei einer bestehenden externen HTTPS-Adresse kannst du auch `PHOTO_PUBLIC_URL` setzen. Der Host-Port ist standardmäßig `8080`, der Datenordner auf dem Server `/DATA/AppData/foto-upload/data`.
-4. **Installieren** wählen. CasaOS lädt das Image `ghcr.io/thoms263/foto_upload_offiziel:3.0.1` für die passende Architektur. Öffne die neue Kachel **Foto-Upload**, wähle **Verwaltung** und melde dich mit deinem Erstpasswort an.
+4. **Installieren** wählen. CasaOS lädt das Image `ghcr.io/thoms263/foto_upload_offiziel:3.0.2` für die passende Architektur. Öffne die neue Kachel **Foto-Upload**, wähle **Verwaltung** und melde dich mit deinem Erstpasswort an.
 
 Wer das Passwortfeld leer lässt, erhält beim ersten Start ein Zufallspasswort. Du kannst es im Serverterminal mit `docker exec foto-upload cat /data/.initial-admin-password` auslesen.
 
@@ -35,17 +35,17 @@ Den letzten Befehl im Terminal des Servers ausführen und das angezeigte **Erstp
 
 ## 3. Direkt aus den Release-Dateien
 
-1. Im Terminal des Servers `uname -m` ausführen. Für `x86_64` das Archiv **amd64**, für `aarch64` oder `arm64` das Archiv **arm64** wählen. Außerdem die Import-YAML für das lokale Image laden. [Archiv AMD64](https://github.com/ThomS263/foto_upload_offiziel/releases/download/v3.0.1/foto-upload-3.0.1-linux-amd64.tar.gz) · [Archiv ARM64](https://github.com/ThomS263/foto_upload_offiziel/releases/download/v3.0.1/foto-upload-3.0.1-linux-arm64.tar.gz) · [Import-YAML für geladenes Image](https://github.com/ThomS263/foto_upload_offiziel/releases/download/v3.0.1/foto-upload-casaos.yaml)
+1. Im Terminal des Servers `uname -m` ausführen. Für `x86_64` das Archiv **amd64**, für `aarch64` oder `arm64` das Archiv **arm64** wählen. Außerdem die Import-YAML für das lokale Image laden. [Archiv AMD64](https://github.com/ThomS263/foto_upload_offiziel/releases/download/v3.0.2/foto-upload-3.0.2-linux-amd64.tar.gz) · [Archiv ARM64](https://github.com/ThomS263/foto_upload_offiziel/releases/download/v3.0.2/foto-upload-3.0.2-linux-arm64.tar.gz) · [Import-YAML für geladenes Image](https://github.com/ThomS263/foto_upload_offiziel/releases/download/v3.0.2/foto-upload-casaos.yaml)
 2. Das Docker-Archiv auf den Server übertragen. Dort im Ordner mit dem Download den passenden Befehl ausführen. Das Image wird in die lokale Docker-Installation geladen.
 
    ~~~bash
    # Intel- oder AMD-Server
-   docker load --input foto-upload-3.0.1-linux-amd64.tar.gz
+   docker load --input foto-upload-3.0.2-linux-amd64.tar.gz
    ~~~
 
    ~~~bash
    # 64-Bit-ARM-Server
-   docker load --input foto-upload-3.0.1-linux-arm64.tar.gz
+   docker load --input foto-upload-3.0.2-linux-arm64.tar.gz
    ~~~
 
 3. In CasaOS den **App Store → Custom Install** öffnen, **Import** wählen und den gesamten Inhalt von `foto-upload-casaos.yaml` einfügen. Den Dateipfad für den Speicher prüfen und die Installation starten. Standardmäßig speichert CasaOS unter `/DATA/AppData/foto-upload/data` und gibt Port `8080` frei. [CasaOS-Anleitung zur benutzerdefinierten Installation](https://wiki.casaos.io/en/apps)
@@ -62,7 +62,7 @@ docker compose -f foto-upload-casaos.yaml up -d --pull never --wait
 docker exec foto-upload cat /data/.initial-admin-password
 ~~~
 
-Die Datei `SHA256SUMS` im Release enthält die Prüfsummen der Downloads. Zum Vergleich für eine einzelne Datei z. B. `sha256sum foto-upload-3.0.1-linux-amd64.tar.gz` ausführen.
+Die Datei `SHA256SUMS` im Release enthält die Prüfsummen der Downloads. Zum Vergleich für eine einzelne Datei z. B. `sha256sum foto-upload-3.0.2-linux-amd64.tar.gz` ausführen.
 
 ## 4. Direkt mit Python
 
@@ -112,5 +112,5 @@ In CasaOS lässt sich `PHOTO_PUBLIC_URL` in den App-Einstellungen ändern. Den H
 - **Status prüfen.** Auf dem Server `curl -fsS 'http://127.0.0.1:8080/health?ready=1'` ausführen. Bei erfolgreichem Start enthält die Antwort `"ok":true`. Für die Git-Installation zeigen `docker compose ps` und `docker compose logs --tail 60 foto-upload` den Dienstzustand und die letzten Meldungen.
 - **Aktualisieren.** Vor dem Update unter **Verwaltung → Sicherung & Pflege → Backup herunterladen** eine Sicherung erstellen. Bei der Git-Installation im Projektordner `./update.sh` ausführen. Bei der Installation aus einem Release das neue Archiv für dieselbe Architektur laden und die neue YAML mit demselben Speicherpfad und den eigenen Einstellungen anwenden.
 - **Wiederherstellen.** Den Dienst stoppen, das Backup in ein leeres Datenverzeichnis entpacken, dieses wieder als `/data` einbinden und den Dienst starten. Die Sicherung enthält auch Zugangsdaten und gehört auf einen privaten Speicher. Bei einer externen Konfiguration von `PHOTO_ADMIN_PASSWORD_HASH` denselben Wert wieder setzen.
-- **Zweite Kopie.** Einen zweiten Datenträger als weiteres Volume, beispielsweise unter `/backup`, einbinden und `PHOTO_BACKUP_DIR=/backup` im Container setzen. Bei jedem Backup-Download entsteht dort eine zusätzliche ZIP-Datei.
+- **Zweite Kopie.** Einen zweiten Datenträger als weiteres Volume, beispielsweise unter `/backup`, einbinden und `PHOTO_BACKUP_DIR=/backup` im Container setzen. Bei jedem Backup-Download entsteht dort eine zusätzliche ZIP-Datei. Unter „Sicherung & Pflege“ kann zusätzlich eine tägliche automatische Sicherung aktiviert werden. Die Verwaltung zeigt den letzten Erfolg und Fehler. Solange die App läuft, prüft sie jede Minute, ob eine Sicherung fällig ist.
 - **Speicherplatz.** Ein Original darf bis zu 2 GiB groß sein. Die App lässt beim Hochladen mindestens 1 GB Speicher frei. Nach einem Verbindungsabbruch auf demselben Gerät im selben Browser dieselbe Datei innerhalb von 24 Stunden erneut auswählen, um einen großen Upload fortzusetzen.

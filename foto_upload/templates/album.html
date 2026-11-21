@@ -29,10 +29,12 @@
     <button id="refresh">Aktualisieren</button></div>
     <div class="gallery-tools">
       <label><span id="filter-name">Person</span><select id="filter" aria-labelledby="filter-name"><option>Alle Personen</option></select></label>
+      <label>Sortieren<select id="gallery-sort"><option value="new">Neueste Uploads</option><option value="old">Älteste Uploads</option><option value="taken">Aufnahmedatum</option></select></label>
       <button id="select-all" disabled>Alle wählen</button><button id="download-selection" disabled>Auswahl als ZIP</button>
       <button id="download-all" disabled>Alle als ZIP</button>
     </div>
     <p id="gallery-status" role="status">Galerie wird geladen …</p><div id="grid" class="grid"></div>
+    <button id="more-files" hidden>Weitere Dateien anzeigen</button>
   </section>
   <dialog id="viewer" aria-label="Großansicht"><div class="viewer-head"><span id="caption"></span><button id="close-viewer" autofocus>Schließen</button></div>
     <div id="stage"></div><div class="viewer-actions"><button id="prev">← Zurück</button><a class="button" id="original" download>Original laden</a><button id="next">Weiter →</button></div>

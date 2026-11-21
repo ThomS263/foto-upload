@@ -326,8 +326,48 @@ class AlbumsTest(unittest.TestCase):
             self.client.delete("/admin/api/events/sommer/files/urlaub.jpg").status_code, 200
         )
         self.assertFalse(photo.exists())
-        self.assertFalse((folder / ".thumbs/urlaub.jpg.jpg").exists())
+        self.assertTrue((folder / ".trash/urlaub.jpg").exists())
+        self.assertEqual(self.client.post("/admin/api/cleanup").json["removed"], 0)
         self.assertEqual(self.client.get("/admin/api/events/sommer/files").json["files"], [])
+        self.assertEqual(
+            self.client.post(
+                "/admin/api/events/sommer/trash", json={"name": "urlaub.jpg"}
+            ).status_code,
+            200,
+        )
+        self.assertEqual(photo.read_bytes(), jpeg())
+
+    def test_share_expiry_and_automatic_backup(self):
+        from foto_upload.admin import automatic_backup
+
+        self.admin()
+        event = "/admin/api/events/sommer"
+        self.assertEqual(
+            self.client.put(
+                event, json={"public_access": True, "share_expires": int(time.time()) - 60}
+            ).status_code,
+            200,
+        )
+        link = self.client.get("/admin/api/events").json[0]["share"]
+        self.assertIn(
+            "Albumpasswort",
+            self.app.test_client().get(urlsplit(link).path + "?" + urlsplit(link).query).text,
+        )
+        self.assertEqual(
+            self.client.put("/admin/api/automatic-backup", json={"enabled": True}).status_code, 400
+        )
+        backup = self.root / "second-disk"
+        backup.mkdir()
+        self.app.config["BACKUP_DIR"] = str(backup)
+        self.assertEqual(
+            self.client.put("/admin/api/automatic-backup", json={"enabled": True}).status_code, 200
+        )
+        automatic_backup(self.app)
+        status = self.client.get("/admin/api/automatic-backup").json["status"]
+        self.assertTrue(status["success"])
+        with zipfile.ZipFile(next(backup.glob("*.zip"))) as archive:
+            self.assertIsNone(archive.testzip())
+            self.assertIn(".events.json", archive.namelist())
 
     def test_stale_partial_expiry(self):
         self.enter()

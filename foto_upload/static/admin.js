@@ -42,6 +42,10 @@ function editor(album, opened) {
   fields.title.value = album.title;
   fields.subtitle.value = album.subtitle;
   fields.public_access.checked = album.public_access;
+  if (album.share_expires) {
+    const date = new Date(album.share_expires * 1000);
+    fields.share_expires.value = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  }
   if (album.share) {
     details.querySelector(".share-links").hidden = false;
     details.querySelector("[data-share]").href = album.share;
@@ -51,6 +55,7 @@ function editor(album, opened) {
     event.preventDefault();
     act(form, async () => {
       const data = {title: fields.title.value, subtitle: fields.subtitle.value, public_access: fields.public_access.checked};
+      data.share_expires = fields.share_expires.value ? Math.floor(new Date(fields.share_expires.value).getTime() / 1000) : 0;
       if (fields.password.value) data.password = fields.password.value;
       await request(url, "PUT", data);
       await load(album.slug, "Album gespeichert.");
@@ -81,16 +86,40 @@ function editor(album, opened) {
         remove.type = "button";
         remove.setAttribute("aria-label", file.name + " löschen");
         remove.onclick = async () => {
-          if (!window.confirm("Datei „" + file.name + "“ dauerhaft löschen?")) return;
+          if (!window.confirm("Datei „" + file.name + "“ in den Papierkorb verschieben?")) return;
           remove.disabled = true;
           try {
             await request(url + "/files/" + encodeURIComponent(file.name), "DELETE");
             row.remove();
-            status.textContent = "Datei gelöscht.";
+            status.textContent = "Datei im Papierkorb.";
             loadStorage();
           } catch (error) { status.textContent = error.message; remove.disabled = false; }
         };
         row.append(label, remove);
+        list.append(row);
+      }
+    } catch (error) { status.textContent = error.message; }
+  };
+  details.querySelector("[data-load-trash]").onclick = async () => {
+    const status = details.querySelector("[data-trash-status]");
+    const list = details.querySelector("[data-trash]");
+    try {
+      const data = await json(url + "/trash");
+      list.replaceChildren();
+      status.textContent = data.files.length ? data.files.length + " Dateien im Papierkorb" : "Papierkorb ist leer.";
+      for (const file of data.files) {
+        const row = element("li");
+        const restore = element("button", "Wiederherstellen");
+        restore.type = "button";
+        restore.onclick = async () => {
+          restore.disabled = true;
+          try {
+            await request(url + "/trash", "POST", {name: file.name});
+            row.remove();
+            status.textContent = "Datei wiederhergestellt.";
+          } catch (error) { status.textContent = error.message; restore.disabled = false; }
+        };
+        row.append(element("span", file.name), restore);
         list.append(row);
       }
     } catch (error) { status.textContent = error.message; }
@@ -116,6 +145,30 @@ function renderAlbums() {
 byId("album-search").addEventListener("input", renderAlbums);
 byId("album-sort").addEventListener("change", renderAlbums);
 loadStorage();
+json("/admin/api/version").then(data => {
+  const current = data.current.split(".").map(Number);
+  const latest = (data.latest || "").split(".").map(Number);
+  const newer = latest.length === 3 && latest.every(Number.isFinite) &&
+    (latest[0] > current[0] || (latest[0] === current[0] && (latest[1] > current[1] ||
+    (latest[1] === current[1] && latest[2] > current[2]))));
+  byId("version-status").textContent = "Version " + data.current + (newer ? " · Update " + data.latest + " verfügbar." : data.latest ? " · Aktuell." : " · Updateprüfung nicht erreichbar.");
+}).catch(() => { byId("version-status").textContent = "Updateprüfung nicht erreichbar."; });
+
+async function backupStatus() {
+  try {
+    const data = await json("/admin/api/automatic-backup");
+    byId("auto-backup").checked = data.enabled;
+    const state = data.status;
+    const last = state.success ? "Letzte Sicherung: " + new Date(state.success * 1000).toLocaleString("de") : "Noch keine automatische Sicherung.";
+    byId("backup-status").textContent = last + (state.error ? " Fehler: " + state.error : "");
+  } catch (error) { byId("backup-status").textContent = error.message; }
+}
+byId("auto-backup").onchange = async event => {
+  try { await request("/admin/api/automatic-backup", "PUT", {enabled: event.target.checked}); }
+  catch (error) { event.target.checked = !event.target.checked; byId("backup-status").textContent = error.message; return; }
+  backupStatus();
+};
+backupStatus();
 
 const create = byId("new-album");
 let autoSlug = true;

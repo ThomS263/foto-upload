@@ -247,6 +247,13 @@ class Store:
                     if enabled != event["public_access"]:
                         event["public_access"] = enabled
                         event["revision"] += 1
+                if "share_expires" in values:
+                    expiry = values["share_expires"]
+                    if not isinstance(expiry, int) or isinstance(expiry, bool) or expiry < 0:
+                        raise Problem("Ungültiges Ablaufdatum.")
+                    if expiry != event.get("share_expires", 0):
+                        event["share_expires"] = expiry
+                        event["revision"] += 1
             if action == "create":
                 self.prepare(event)
             write_json(self.catalog, events)

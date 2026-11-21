@@ -1,6 +1,7 @@
 import hashlib
 import io
 import secrets
+import time
 from urllib.parse import urlencode
 
 import qrcode
@@ -98,6 +99,7 @@ def valid_invite(slug, event, token):
         and data.get("event") == slug
         and data.get("public") is True
         and data.get("revision", 0) == event["revision"]
+        and (not event.get("share_expires") or time.time() < event["share_expires"])
     )
 
 
@@ -170,7 +172,7 @@ def qr(slug=None):
 def health():
     from .media import files_in
 
-    status = {"ok": True, "gallery": True, "version": "3.0.1"}
+    status = {"ok": True, "gallery": True, "version": "3.0.2"}
     if request.args.get("ready") != "1":
         store = storage()
         status["files"] = {

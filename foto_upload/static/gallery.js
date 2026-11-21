@@ -8,6 +8,7 @@ let items = [];
 let visible = [];
 let current = -1;
 let generation = 0;
+let displayed = 60;
 
 function buttons() {
   byId("download-selection").disabled = !chosen.size;
@@ -56,9 +57,12 @@ function tile(item, index) {
 
 function render() {
   visible = items.filter(item => filter.value === "*" || item.n === filter.value.slice(1));
+  if (byId("gallery-sort").value === "old") visible.reverse();
+  if (byId("gallery-sort").value === "taken") visible.sort((a, b) => b.taken - a.taken || a.f.localeCompare(b.f));
   byId("gcount").textContent = String(visible.length);
   byId("gallery-status").textContent = visible.length ? "" : "Hier sind noch keine Fotos oder Videos.";
-  grid.replaceChildren(...visible.map(tile));
+  grid.replaceChildren(...visible.slice(0, displayed).map(tile));
+  byId("more-files").hidden = visible.length <= displayed;
   buttons();
 }
 
@@ -117,7 +121,9 @@ function show(index) {
 
 function step(offset) { if (visible.length) show((current + offset + visible.length) % visible.length); }
 byId("refresh").onclick = loadGallery;
-filter.onchange = render;
+filter.onchange = () => { displayed = 60; render(); };
+byId("gallery-sort").onchange = () => { displayed = 60; render(); };
+byId("more-files").onclick = () => { displayed += 60; render(); };
 byId("select-all").onclick = () => {
   const clear = visible.every(item => chosen.has(item.f));
   visible.forEach(item => clear ? chosen.delete(item.f) : chosen.add(item.f));

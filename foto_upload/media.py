@@ -9,6 +9,8 @@ import secrets
 import shutil
 import time
 import zipfile
+from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 
 from flask import (
@@ -107,6 +109,22 @@ def files_in(folder):
         for path in folder.iterdir()
         if media_name(path.name) and not path.is_symlink() and path.is_file()
     )
+
+
+@lru_cache(maxsize=16384)
+def capture_time(path, mtime_ns, size):
+    fallback = mtime_ns // 1_000_000_000
+    if path.suffix.lower() not in IMAGE:
+        return fallback
+    try:
+        with Image.open(path) as picture:
+            exif = picture.getexif()
+            value = exif.get(36867) or exif.get(306) or exif.get_ifd(34665).get(36867)
+            if value:
+                return int(datetime.strptime(str(value), "%Y:%m:%d %H:%M:%S").timestamp())
+    except (OSError, ValueError, TypeError, SyntaxError, Image.DecompressionBombError):
+        pass
+    return fallback
 
 
 def preview(source, dest):
@@ -317,6 +335,7 @@ def gallery_list():
                 "k": "video" if path.suffix.lower() in VIDEO else "image",
                 "n": names.get(path.name, ""),
                 "t": int(stat.st_mtime),
+                "taken": capture_time(path, stat.st_mtime_ns, stat.st_size),
                 "s": stat.st_size,
                 "has_preview": path.suffix.lower() in IMAGE
                 or (folder / ".thumbs" / (path.name + ".jpg")).is_file(),

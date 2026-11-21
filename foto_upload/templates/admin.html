@@ -5,6 +5,7 @@
 <div class="album-nav"><a class="back" href="/">← Alle Alben</a>
   <form action="{{ url_for('admin.logout') }}" method="post"><button class="quiet">Abmelden</button></form></div>
 <header class="pagehead"><h1>Verwaltung</h1></header>
+<p id="version-status" role="status">Version wird geprüft …</p>
 <div class="admin-layout"><section><h2>Alben verwalten</h2>
   <div class="gallery-tools">
     <label>Alben suchen<input id="album-search" type="search" placeholder="Albumname"></label>
@@ -20,6 +21,8 @@
     <button class="primary">Anlegen</button><p role="status"></p></form></details>
   <details class="panel"><summary>Sicherung &amp; Pflege</summary>
     <p id="disk-space" role="status">Speicherplatz wird geladen …</p>
+    <label class="check"><input id="auto-backup" type="checkbox">Täglich auf zweiten Speicher sichern</label>
+    <p id="backup-status" role="status"></p>
     <p>Die Sicherung enthält Originale, Vorschauen, Gastnamen und Albumzugänge.</p>
     <div class="actions"><a class="button" href="{{ url_for('admin.backup') }}">Backup herunterladen</a>
     <button id="cleanup">Verwaiste Vorschauen entfernen</button></div><p id="cleanup-result" role="status"></p>
@@ -35,13 +38,16 @@
       <label>Beschreibung<input name="subtitle" maxlength="180"></label>
       <label>Neues Albumpasswort<input name="password" type="password" maxlength="256" autocomplete="new-password" placeholder="Für Passwortwechsel ausfüllen"></label>
       <label class="check"><input name="public_access" type="checkbox">Gästelink ohne Passwort freigeben</label>
+      <label>Gästelink gültig bis <small>(optional)</small><input name="share_expires" type="datetime-local"></label>
       <div class="actions"><button class="primary">Speichern</button><button type="button" data-archive></button></div>
       <p role="status"></p></form>
     <div class="share-links" hidden><a data-share>Gästelink öffnen</a> · <a data-qr>Gäste-QR anzeigen</a></div>
     <details class="media-manager"><summary>Dateien verwalten</summary>
-      <p>Einzelne Dateien können dauerhaft gelöscht werden.</p>
+      <p>Gelöschte Dateien bleiben im Papierkorb und können wiederhergestellt werden.</p>
       <button type="button" data-load-files>Dateien anzeigen</button>
       <p data-files-status role="status"></p><ul data-files class="admin-files"></ul>
+      <button type="button" data-load-trash>Papierkorb anzeigen</button>
+      <p data-trash-status role="status"></p><ul data-trash class="admin-files"></ul>
     </details>
   </details>
 </template>
