@@ -2,4 +2,4 @@
 pytest>=8,<10
 playwright>=1.55,<2
 zxing-cpp>=2.3,<4
-PyYAML>=6,<7
+PyYAML>=6.0.3,<7
