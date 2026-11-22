@@ -23,6 +23,7 @@ DEMO_ALBUMS = {
         "title": "Gartenfest",
         "subtitle": "Fotos und Videos vom gemeinsamen Abend.",
         "password": "Testfest",
+        "allow_comments": True,
     },
     "see": {
         "title": "Sommer am See",
@@ -157,6 +158,11 @@ def test_guests(site, browser, width, height):
         page.keyboard.press("Escape")
         page.get_by_role("button", name=re.compile("Foto öffnen")).click()
         expect(page.locator("#stage img")).to_be_visible()
+        page.get_by_role("button", name=re.compile("Favorit")).click()
+        expect(page.get_by_role("button", name=re.compile(r"Favorit \(1\)"))).to_be_visible()
+        page.locator("#comment-text").fill("Ein schönes Foto!")
+        page.locator("#comment-form").get_by_role("button", name="Absenden").click()
+        expect(page.locator("#comment-list")).to_contain_text("Ein schönes Foto!")
         with page.expect_download() as download:
             page.get_by_role("link", name="Original laden").click()
         assert download.value.path().read_bytes() == content

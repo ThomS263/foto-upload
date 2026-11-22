@@ -233,6 +233,25 @@ class AlbumsTest(unittest.TestCase):
             self.assertTrue(result.json["complete"])
         (item,) = self.client.get("/gallery/list").json["items"]
         self.assertEqual(item["n"], "Lena")
+        self.assertEqual((item["favorite_count"], item["comments"]), (0, []))
+        favorite = self.client.post(
+            "/gallery/favorite", json={"file": item["f"], "active": True}
+        )
+        self.assertEqual((favorite.status_code, favorite.json["favorite_count"]), (200, 1))
+        self.assertEqual(
+            self.client.post(
+                "/gallery/comment", json={"file": item["f"], "text": "Schön!"}
+            ).status_code,
+            403,
+        )
+        self.admin(self.app.test_client()).put(
+            "/admin/api/events/sommer", json={"allow_comments": True}
+        )
+        comment = self.client.post(
+            "/gallery/comment", json={"file": item["f"], "text": "Schön!", "name": "Lena"}
+        )
+        self.assertEqual(comment.status_code, 200)
+        self.assertEqual(comment.json["comments"][0]["text"], "Schön!")
         with self.client.get(item["thumb"]) as response:
             self.assertEqual(Image.open(io.BytesIO(response.data)).size, (40, 32))
         with self.client.get(item["dl"], headers={"Range": "bytes=0-3"}) as response:

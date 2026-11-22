@@ -48,6 +48,8 @@ function editor(album, opened) {
   fields.allow_gallery.checked = album.allow_gallery;
   fields.allow_download.checked = album.allow_download;
   fields.expose_gps.checked = album.expose_gps;
+  fields.allow_reactions.checked = album.allow_reactions;
+  fields.allow_comments.checked = album.allow_comments;
   if (album.share_expires) {
     const date = new Date(album.share_expires * 1000);
     fields.share_expires.value = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -64,7 +66,8 @@ function editor(album, opened) {
         event_date: fields.event_date.value, tone: fields.tone.value,
         public_access: fields.public_access.checked, allow_upload: fields.allow_upload.checked,
         allow_gallery: fields.allow_gallery.checked, allow_download: fields.allow_download.checked,
-        expose_gps: fields.expose_gps.checked};
+        expose_gps: fields.expose_gps.checked, allow_reactions: fields.allow_reactions.checked,
+        allow_comments: fields.allow_comments.checked};
       data.share_expires = fields.share_expires.value ? Math.floor(new Date(fields.share_expires.value).getTime() / 1000) : 0;
       if (fields.password.value) data.password = fields.password.value;
       await request(url, "PUT", data);

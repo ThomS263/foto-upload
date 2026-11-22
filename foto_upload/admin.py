@@ -28,7 +28,7 @@ from .storage import Problem, directory, locked, read_json, safe_name, write_jso
 from .views import admin_ok, admin_stamp, payload, require_admin, share_target, storage
 
 admin = Blueprint("admin", __name__, url_prefix="/admin")
-VERSION = "3.2.1"
+VERSION = "3.3.0"
 
 
 @admin.route("", methods=["GET", "POST"])
@@ -233,7 +233,8 @@ def albums():
         stats = [p.stat() for p in files_in(folder)]
         result = {key: event[key] for key in (
             "title", "subtitle", "folder", "archived", "public_access", "allow_upload",
-            "allow_gallery", "allow_download", "expose_gps", "event_date", "tone"
+            "allow_gallery", "allow_download", "expose_gps", "allow_reactions",
+            "allow_comments", "event_date", "tone"
         )}
         result.update(
             slug=slug,
@@ -316,6 +317,7 @@ def backup_entries(store):
     for event in store.events().values():
         folder = store.folder(event)
         paths.append(folder / ".meta.jsonl")
+        paths.append(folder / ".gallery.json")
         paths.append(folder / ".cover.jpg")
         trash = folder / ".trash"
         if trash.is_dir() and not trash.is_symlink():

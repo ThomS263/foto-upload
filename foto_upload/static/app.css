@@ -117,6 +117,15 @@ main.wrap { padding-block: 1.6rem 4rem; }
 .map-list { grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); }
 .map-card { padding: 1rem; border: 1px solid var(--line); border-radius: .8rem; background: var(--panel); }
 .map-card a { display: block; font-weight: 700; overflow-wrap: anywhere; }
+.map-card button { width: 100%; margin-top: .6rem; }
+.favorite { color: #a33b55; font-weight: 700; }
+.comments { padding: .6rem; border-top: 1px solid #ffffff40; }
+.comments h3 { margin: .2rem 0 .5rem; }
+.comment { margin: .35rem 0; padding: .5rem .65rem; border-radius: .6rem; background: #ffffff18; }
+.comment small { display: block; opacity: .8; }
+#comment-form { display: flex; align-items: end; gap: .5rem; }
+#comment-form label { flex: 1; }
+#comment-form input { margin: .2rem 0 0; }
 .media-meta { color: var(--muted); font-size: .82rem; }
 .tile .row { margin: 0; gap: .3rem; font-size: .8rem; }
 .tile .row a { padding-block: .5rem; }
@@ -163,5 +172,6 @@ code { overflow-wrap: anywhere; }
   .gallery-tools > label { width: 100%; }
   .actions .picker { flex: 1 1 auto; }
   .viewer-actions button, .viewer-actions a { padding-inline: .5rem; font-size: .86rem; }
+  #comment-form { align-items: stretch; flex-direction: column; }
   .share { gap: .7rem; }
 }

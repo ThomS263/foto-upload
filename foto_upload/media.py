@@ -105,6 +105,31 @@ def read_names(folder):
     return result
 
 
+def read_social(folder):
+    path = folder / ".gallery.json"
+    if path.is_symlink() or not path.exists():
+        return {}
+    try:
+        data = read_json(path)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def public_social(record, device):
+    favorites = record.get("favorites", [])
+    comments = record.get("comments", [])
+    return {
+        "favorite_count": len(favorites),
+        "favorite": device in favorites,
+        "comments": [
+            {"id": row.get("id", ""), "name": plain(row.get("name", ""), 40),
+             "text": plain(row.get("text", ""), 240), "time": int(row.get("time", 0))}
+            for row in comments[-100:] if isinstance(row, dict)
+        ],
+    }
+
+
 def files_in(folder):
     return (
         path
@@ -356,12 +381,12 @@ def gallery_list():
         raise Problem("Die Galerie ist für dieses Album nicht freigegeben.", 403)
     folder = storage().folder(event)
     names = read_names(folder)
+    social = read_social(folder)
     items = []
     for path in files_in(folder):
         stat = path.stat()
         urls = {"fn": path.name, "event": slug}
-        items.append(
-            {
+        item = {
                 "f": path.name,
                 "k": "video" if path.suffix.lower() in VIDEO else "image",
                 "n": names.get(path.name, ""),
@@ -376,9 +401,61 @@ def gallery_list():
                 "url": url_for(".original", **urls),
                 "dl": url_for(".original", dl=1, **urls),
             }
-        )
+        item.update(public_social(social.get(path.name, {}), session["device"]))
+        items.append(item)
     items.sort(key=lambda item: (item["t"], item["f"]), reverse=True)
-    return jsonify(ok=True, items=items)
+    return jsonify(
+        ok=True, items=items, allow_reactions=event.get("allow_reactions", True),
+        allow_comments=event.get("allow_comments", False),
+    )
+
+
+@media.post("/gallery/favorite")
+def gallery_favorite():
+    _, event = guest()
+    if not event.get("allow_gallery", True) or not event.get("allow_reactions", True):
+        raise Problem("Favoriten sind für dieses Album nicht freigegeben.", 403)
+    data = request.get_json(silent=True) or {}
+    folder = storage().folder(event)
+    path = media_file(folder, str(data.get("file", "")))
+    device = session["device"]
+    with locked(folder / ".gallery.lock"):
+        social = read_social(folder)
+        record = social.setdefault(path.name, {})
+        favorites = set(record.get("favorites", []))
+        if bool(data.get("active")):
+            favorites.add(device)
+        else:
+            favorites.discard(device)
+        record["favorites"] = sorted(favorites)
+        write_json(folder / ".gallery.json", social)
+    return jsonify(ok=True, **public_social(record, device))
+
+
+@media.post("/gallery/comment")
+def gallery_comment():
+    slug, event = guest()
+    if not event.get("allow_gallery", True) or not event.get("allow_comments", False):
+        raise Problem("Kommentare sind für dieses Album nicht freigegeben.", 403)
+    data = request.get_json(silent=True) or {}
+    text = plain(data.get("text", ""), 240)
+    if not text:
+        raise Problem("Bitte einen Kommentar eingeben.")
+    folder = storage().folder(event)
+    path = media_file(folder, str(data.get("file", "")))
+    store = storage()
+    store.limit("comment:" + slug, session["device"], 30)
+    with locked(folder / ".gallery.lock"):
+        social = read_social(folder)
+        record = social.setdefault(path.name, {})
+        comments = record.setdefault("comments", [])
+        comments.append({
+            "id": secrets.token_hex(8), "name": plain(data.get("name", ""), 40),
+            "text": text, "time": int(time.time()), "device": session["device"],
+        })
+        record["comments"] = comments[-100:]
+        write_json(folder / ".gallery.json", social)
+    return jsonify(ok=True, **public_social(record, session["device"]))
 
 
 @media.get("/gallery/file/<path:fn>")

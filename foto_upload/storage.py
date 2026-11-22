@@ -140,6 +140,8 @@ class Store:
             event.setdefault("allow_gallery", True)
             event.setdefault("allow_download", True)
             event.setdefault("expose_gps", False)
+            event.setdefault("allow_reactions", True)
+            event.setdefault("allow_comments", False)
             event.setdefault("event_date", "")
             event.setdefault("tone", "green")
             event.setdefault("revision", 0)
@@ -232,6 +234,8 @@ class Store:
                     "allow_gallery": True,
                     "allow_download": True,
                     "expose_gps": False,
+                    "allow_reactions": True,
+                    "allow_comments": False,
                     "event_date": "",
                     "tone": "green",
                     "revision": 0,
@@ -282,7 +286,10 @@ class Store:
                     if enabled != event["public_access"]:
                         event["public_access"] = enabled
                         event["revision"] += 1
-                for permission in ("allow_upload", "allow_gallery", "allow_download", "expose_gps"):
+                for permission in (
+                    "allow_upload", "allow_gallery", "allow_download", "expose_gps",
+                    "allow_reactions", "allow_comments",
+                ):
                     if permission in values:
                         enabled = values[permission]
                         if not isinstance(enabled, bool):

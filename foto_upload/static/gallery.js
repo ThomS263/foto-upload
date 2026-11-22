@@ -10,6 +10,14 @@ let current = -1;
 let generation = 0;
 let displayed = 60;
 let slideshowTimer;
+let allowReactions = false;
+let allowComments = false;
+
+function updateSocial(item, data) {
+  item.favorite = data.favorite;
+  item.favorite_count = data.favorite_count;
+  item.comments = data.comments;
+}
 
 function buttons() {
   byId("download-selection").disabled = !chosen.size;
@@ -34,7 +42,17 @@ function tile(item, index) {
     img.src = item.thumb;
     open.append(img);
   }
-  open.onclick = () => show(index);
+  let held = false;
+  let hold;
+  open.onpointerdown = event => {
+    if (event.pointerType !== "mouse") hold = setTimeout(() => {
+      held = true;
+      chosen.has(item.f) ? chosen.delete(item.f) : chosen.add(item.f);
+      render();
+    }, 550);
+  };
+  open.onpointerup = open.onpointercancel = () => clearTimeout(hold);
+  open.onclick = () => { if (held) held = false; else show(index); };
   const foot = element("footer");
   const tools = element("div", undefined, "row");
   const check = element("input");
@@ -52,7 +70,9 @@ function tile(item, index) {
   download.href = item.dl;
   download.download = "";
   tools.append(selectLabel, download);
-  foot.append(element("small", new Date(item.taken * 1000).toLocaleDateString("de"), "media-meta"),
+  foot.append(element("small", new Date(item.taken * 1000).toLocaleDateString("de") +
+      (item.favorite_count ? " · ♥ " + item.favorite_count : "") +
+      (item.comments.length ? " · 💬 " + item.comments.length : ""), "media-meta"),
     element("strong", item.n ? "Von " + item.n : "Ohne Namen"), tools);
   card.append(open, foot);
   return card;
@@ -65,18 +85,28 @@ function render() {
     (type === "*" || item.k === type) && (item.f + " " + item.n).toLocaleLowerCase("de").includes(query));
   if (byId("gallery-sort").value === "old") visible.reverse();
   if (byId("gallery-sort").value === "taken") visible.sort((a, b) => b.taken - a.taken || a.f.localeCompare(b.f));
+  if (byId("gallery-sort").value === "favorites") visible.sort((a, b) => b.favorite_count - a.favorite_count || b.taken - a.taken);
   byId("gcount").textContent = String(visible.length);
   byId("gallery-status").textContent = visible.length ? "" : "Hier sind noch keine Fotos oder Videos.";
   const view = byId("gallery-view").value;
   grid.className = view === "timeline" ? "grid timeline" : view === "map" ? "grid map-list" : "grid";
   if (view === "map") {
     const located = visible.filter(item => item.gps);
-    grid.replaceChildren(...located.map(item => {
+    const groups = new Map();
+    for (const item of located) {
+      const key = item.gps.map(value => value.toFixed(3)).join(",");
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(item);
+    }
+    grid.replaceChildren(...[...groups.values()].map(group => {
+      const item = group[0];
       const card = element("article", undefined, "map-card");
-      const link = element("a", "📍 " + (item.n ? "Foto von " + item.n : item.f));
+      const link = element("a", "📍 " + group.length + (group.length === 1 ? " Aufnahme" : " Aufnahmen"));
       link.href = "https://www.openstreetmap.org/?mlat=" + item.gps[0] + "&mlon=" + item.gps[1] + "#map=16/" + item.gps[0] + "/" + item.gps[1];
       link.target = "_blank"; link.rel = "noopener";
-      card.append(link, element("small", item.gps.join(", "), "media-meta"));
+      const open = element("button", "Fotos ansehen");
+      open.onclick = () => show(visible.indexOf(item));
+      card.append(link, element("small", item.gps.join(", "), "media-meta"), open);
       return card;
     }));
     byId("gallery-status").textContent = located.length ? located.length + " Aufnahme(n) mit Standort." : "Keine Fotos mit GPS-Standort vorhanden.";
@@ -100,6 +130,8 @@ export async function loadGallery() {
     const data = await json(scoped("/gallery/list"));
     if (version !== generation) return;
     items = data.items;
+    allowReactions = data.allow_reactions;
+    allowComments = data.allow_comments;
     const names = new Set(items.map(item => item.n));
     const files = new Set(items.map(item => item.f));
     for (const file of chosen) if (!files.has(file)) chosen.delete(file);
@@ -150,8 +182,45 @@ function show(index) {
   if (item.k !== "video") byId("media-info").textContent = new Date(item.taken * 1000).toLocaleString("de") + " · " + formatBytes(item.s);
   byId("original").href = item.dl;
   byId("prev").disabled = byId("next").disabled = visible.length < 2;
+  renderSocial(item);
   if (!dialog.open) dialog.showModal();
 }
+
+function renderSocial(item) {
+  const favorite = byId("favorite");
+  favorite.hidden = !allowReactions;
+  favorite.classList.toggle("favorite", item.favorite);
+  favorite.textContent = (item.favorite ? "♥" : "♡") + " Favorit" + (item.favorite_count ? " (" + item.favorite_count + ")" : "");
+  const comments = byId("comments");
+  comments.hidden = !allowComments;
+  byId("comment-list").replaceChildren(...item.comments.map(row => {
+    const card = element("div", row.text, "comment");
+    card.prepend(element("small", (row.name || "Gast") + " · " + new Date(row.time * 1000).toLocaleString("de")));
+    return card;
+  }));
+}
+
+byId("favorite").onclick = async () => {
+  const item = visible[current];
+  if (!item) return;
+  try {
+    const data = await json(scoped("/gallery/favorite"), {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({file: item.f, active: !item.favorite})});
+    updateSocial(item, data); renderSocial(item);
+  } catch (error) { byId("gallery-status").textContent = error.message; }
+};
+
+byId("comment-form").onsubmit = async event => {
+  event.preventDefault();
+  const item = visible[current];
+  const input = byId("comment-text");
+  if (!item || !input.value.trim()) return;
+  try {
+    const data = await json(scoped("/gallery/comment"), {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({file: item.f, text: input.value.trim(), name: byId("who").value.trim()})});
+    updateSocial(item, data); input.value = ""; byId("comment-status").textContent = "Kommentar gespeichert."; renderSocial(item);
+  } catch (error) { byId("comment-status").textContent = error.message; }
+};
 
 function formatBytes(value) {
   return new Intl.NumberFormat("de", {maximumFractionDigits: 1}).format(value / 1024 / 1024) + " MiB";

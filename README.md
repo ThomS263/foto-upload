@@ -4,7 +4,7 @@ Foto-Upload sammelt die Fotos und Videos einer Feier oder Reise auf deinem eigen
 
 **[Manuelle Installation](INSTALLATION.md)** · [Downloads für AMD64 und ARM64](https://github.com/ThomS263/foto_upload_offiziel/releases/latest) · [Android-App mit APK](https://github.com/ThomS263/foto_upload_offiziell_androidapp) · [Handyansicht](Apps/FotoUpload/screenshot-2.png)
 
-**Auf CasaOS** die verlinkte YAML öffnen und den gesamten Text im **App Store → Custom Install → Import** einfügen. Im Dialog unter `PHOTO_ADMIN_PASSWORD` ein eigenes Erstpasswort setzen und **Installieren** wählen. CasaOS lädt das passende Image. [YAML für den CasaOS-Import öffnen](https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.2.1/Apps/FotoUpload/docker-compose.yml)
+**Auf CasaOS** die verlinkte YAML öffnen und den gesamten Text im **App Store → Custom Install → Import** einfügen. Im Dialog unter `PHOTO_ADMIN_PASSWORD` ein eigenes Erstpasswort setzen und **Installieren** wählen. CasaOS lädt das passende Image. [YAML für den CasaOS-Import öffnen](https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.3.0/Apps/FotoUpload/docker-compose.yml)
 
 ## Schnellstart mit Docker Compose
 
@@ -36,7 +36,7 @@ Mit `docker compose ps` lässt sich der Status prüfen. Bei einer Installation �
 ## Was Gäste und Gastgeber tun können
 
 - Fotos und Videos aus der Mediathek oder direkt von der Kamera hochladen. Große Dateien werden in Blöcken übertragen. Nach einer Unterbrechung kann derselbe Browser die Übertragung fortsetzen.
-- Die Galerie nach Dateiname oder Gast durchsuchen, nach Fotos und Videos filtern und als Kacheln, Zeitstrahl oder GPS-Kartenliste anzeigen. Eine Vollbild-Diashow sowie Video-Laufzeit und Dateigröße sind integriert. Für HEIC-Fotos erzeugt der Server JPEG-Vorschauen.
+- Die Galerie nach Dateiname oder Gast durchsuchen, nach Fotos und Videos filtern und als Kacheln, Zeitstrahl oder gruppierte GPS-Orte anzeigen. Gäste können Favoriten setzen und – wenn freigegeben – kommentieren. Langes Drücken wählt Bilder auf dem Handy aus. Eine Vollbild-Diashow sowie Video-Laufzeit und Dateigröße sind integriert.
 - Alben anlegen oder archivieren, Passwörter ändern, Titelbild, Farbe und Datum festlegen sowie Upload, Galerie und Downloads getrennt erlauben. Vorhandene Albumordner werden beim Start erkannt.
 - GPS-Orte werden standardmäßig nicht an Gäste ausgeliefert und können pro Album ausdrücklich freigegeben werden.
 - In der Verwaltung Alben suchen und sortieren, Speicher pro Album, neue Uploads sowie eine Sicherheits- und Funnel-Diagnose prüfen. Dateien können in den Papierkorb verschoben und dort wiederhergestellt werden.
