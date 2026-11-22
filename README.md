@@ -64,4 +64,4 @@ python scripts/package_store.py
 
 Die Browsertests lesen QR-Codes aus Screenshots und prüfen den Gastablauf bei 360, 390 und 1280 Pixel Bildschirmbreite. Der letzte Befehl erstellt die YAML für die manuelle CasaOS-Installation und das ZIP für eine Store-Einreichung unter `dist/`. Das Manifest und die Grafiken liegen unter [Apps/FotoUpload](Apps/FotoUpload).
 
-Die Screenshots zeigen Beispieldaten. Das generierte Titelbild gehört zum Projekt. [Lizenz Apache 2.0](LICENSE)
+Die Screenshots zeigen Beispieldaten. Das generierte Titelbild gehört zum Projekt. Das gesamte Projekt steht unter der [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`). Wer eine veränderte Version über ein Netzwerk bereitstellt, muss den Benutzern den zugehörigen Quellcode anbieten.
