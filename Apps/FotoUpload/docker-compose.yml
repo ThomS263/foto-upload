@@ -2,6 +2,10 @@ name: foto-upload
 services:
   foto-upload:
     image: ghcr.io/thoms263/foto_upload_offiziel:3.4.0
+    deploy:
+      resources:
+        reservations:
+          memory: 128M
     container_name: foto-upload
     restart: unless-stopped
     security_opt:
@@ -54,12 +58,20 @@ x-casaos:
     en_US: Private guest albums for photos and videos
     de_DE: Private Gästealben für Fotos und Videos
   description:
-    en_US: Collect event photos and videos on your own server. Guests open an album by QR code, upload from their phones and download originals individually or as a ZIP. The web interface is in German.
-    de_DE: Sammle Fotos und Videos von Feiern und Reisen auf deinem Server. Gäste öffnen ein Album per QR-Code, laden vom Handy hoch und können Originale einzeln oder als ZIP herunterladen.
+    en_US: Collect event and holiday photos on your own server. Guests open password-protected albums by QR code, upload originals from their phones, browse the bilingual gallery and download individual files or ZIP archives. Includes favorites, comments, resumable uploads, backups and optional administrator two-factor authentication.
+    de_DE: Sammle Fotos und Urlaubsvideos auf deinem eigenen Server. Gäste öffnen passwortgeschützte Alben per QR-Code, laden Originale vom Handy hoch, verwenden die deutsch-englische Galerie und laden einzelne Dateien oder ZIP-Archive herunter. Favoriten, Kommentare, fortsetzbare Uploads, Sicherungen und optionale Zwei-Faktor-Anmeldung sind integriert.
   category: Media
   author: ThomS263
   developer: ThomS263
   version: "3.4.0"
+  update_at: "2026-11-22"
+  release_notes:
+    en_US: Adds German and English language switching, optional TOTP two-factor authentication, gallery favorites and comments, improved mobile selection, security hardening and operational health sensors.
+    de_DE: Ergänzt die Umschaltung zwischen Deutsch und Englisch, optionale TOTP-Zwei-Faktor-Anmeldung, Galerie-Favoriten und Kommentare, verbesserte mobile Auswahl, zusätzliche Sicherheitsmaßnahmen und Betriebssensoren.
+  website: https://github.com/ThomS263/foto_upload_offiziel
+  repo: https://github.com/ThomS263/foto_upload_offiziel
+  support: https://github.com/ThomS263/foto_upload_offiziel/issues
+  docs: https://github.com/ThomS263/foto_upload_offiziel/blob/main/INSTALLATION.md
   icon: https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.4.0/Apps/FotoUpload/icon.png
   thumbnail: https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.4.0/Apps/FotoUpload/thumbnail.png
   screenshot_link:
