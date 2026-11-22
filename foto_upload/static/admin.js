@@ -257,6 +257,28 @@ if (password) password.onsubmit = event => {
     return "Adminpasswort geändert.";
   });
 };
+const totp = byId("totp");
+byId("totp-setup").onclick = async () => {
+  try {
+    const data = await request("/admin/api/totp", "PUT", {});
+    totp.elements.secret.value = data.secret;
+    totp.querySelector("[role=status]").textContent = "Schlüssel in der Authenticator-App eintragen und den erzeugten Code bestätigen.";
+  } catch (error) { totp.querySelector("[role=status]").textContent = error.message; }
+};
+totp.onsubmit = event => {
+  event.preventDefault();
+  act(totp, async () => {
+    await request("/admin/api/totp", "PUT", {secret: totp.elements.secret.value, code: totp.elements.code.value});
+    totp.elements.code.value = "";
+    return "Zwei-Faktor-Anmeldung ist aktiviert.";
+  });
+};
+byId("totp-disable").onclick = async () => {
+  try {
+    await request("/admin/api/totp", "DELETE", {code: totp.elements.code.value});
+    totp.reset(); totp.querySelector("[role=status]").textContent = "Zwei-Faktor-Anmeldung ist deaktiviert.";
+  } catch (error) { totp.querySelector("[role=status]").textContent = error.message; }
+};
 byId("cleanup").onclick = async () => {
   try {
     const result = await request("/admin/api/cleanup", "POST");

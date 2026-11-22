@@ -46,6 +46,12 @@
   {% if managed_password %}<p>Das Passwort wird über die Container-Einstellungen verwaltet.</p>{% else %}
     <form id="admin-password"><label>Neues Passwort<input name="password" type="password" minlength="10" maxlength="256" required autocomplete="new-password"></label>
       <button>Passwort speichern</button><p role="status"></p></form>{% endif %}</details>
+  <details class="panel"><summary>Zwei-Faktor-Anmeldung</summary>
+    <p>Schütze die Verwaltung zusätzlich mit einer Authenticator-App. Bewahre den Einrichtungsschlüssel sicher auf.</p>
+    <form id="totp"><label>Einrichtungsschlüssel<input name="secret" readonly></label>
+      <label>Sechsstelliger Sicherheitscode<input name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6"></label>
+      <div class="actions"><button type="button" id="totp-setup">Einrichten</button><button type="submit">Aktivieren</button><button type="button" id="totp-disable">Deaktivieren</button></div><p role="status"></p></form>
+  </details>
 </div></div>
 <template id="album-editor">
   <details class="panel editor"><summary><strong data-title></strong><small data-info></small></summary>

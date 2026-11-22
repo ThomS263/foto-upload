@@ -11,6 +11,7 @@
       <label for="password">{{ 'Adminpasswort' if manager else 'Albumpasswort' }}</label>
       <div class="password"><input id="password" name="password" type="password" autocomplete="current-password" maxlength="256" required>
         <button type="button" data-show="password" aria-pressed="false">Anzeigen</button></div>
+      {% if manager and totp_enabled %}<label for="otp">Sicherheitscode</label><input id="otp" name="otp" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required>{% endif %}
       {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
       <button class="primary">{{ 'Anmelden' if manager else 'Album öffnen' }}</button>
     </form>

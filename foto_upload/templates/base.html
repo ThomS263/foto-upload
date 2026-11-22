@@ -10,13 +10,15 @@
   <link rel="manifest" href="{{ url_for('pages.manifest') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
   <script defer src="{{ url_for('static', filename='base.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='i18n.js') }}"></script>
   {% block scripts %}{% endblock %}
 </head>
 <body>
 <a class="skip" href="#inhalt">Zum Inhalt</a>
 <header class="top"><nav aria-label="Hauptnavigation" class="wrap">
   <a class="brand" href="{{ url_for('pages.home') }}"><span class="mark" aria-hidden="true"><i></i></span>Foto-Upload</a>
-  <a class="navlink" href="{{ url_for('admin.panel') }}">Verwaltung</a>
+  <span class="nav-actions"><label class="language"><span>Sprache</span><select id="language" aria-label="Sprache"><option value="de">DE</option><option value="en">EN</option></select></label>
+  <a class="navlink" href="{{ url_for('admin.panel') }}">Verwaltung</a></span>
 </nav></header>
 <main id="inhalt" class="wrap">{% block content %}{% endblock %}</main>
 </body>

@@ -16,6 +16,7 @@ from werkzeug.security import generate_password_hash
 
 from foto_upload import create_app
 from foto_upload.media import CHUNK
+from foto_upload.admin import totp_code
 
 
 def jpeg():
@@ -130,6 +131,25 @@ class AlbumsTest(unittest.TestCase):
         self.assertFalse(bootstrap.exists())
         self.assertEqual(second.get("/admin/api/events").status_code, 401)
         self.assertEqual(client.get("/admin/api/events").status_code, 200)
+
+    def test_optional_admin_two_factor_authentication(self):
+        manager = self.admin()
+        secret = manager.put("/admin/api/totp", json={}).json["secret"]
+        code = totp_code(secret)
+        self.assertEqual(
+            manager.put("/admin/api/totp", json={"secret": secret, "code": code}).status_code,
+            200,
+        )
+        manager.post("/admin/logout")
+        self.assertEqual(manager.post("/admin", data={"password": "test-manager"}).status_code, 401)
+        self.assertEqual(
+            manager.post("/admin", data={"password": "test-manager", "otp": totp_code(secret)}).status_code,
+            303,
+        )
+        self.assertEqual(
+            manager.delete("/admin/api/totp", json={"code": totp_code(secret)}).status_code,
+            200,
+        )
 
     def test_migration_preserves_folder_names_files_and_existing_hashes(self):
         legacy = self.root / "legacy"

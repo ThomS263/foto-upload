@@ -107,6 +107,10 @@ def create_app(config=None):
             "no-referrer" if "access" in request.args else "same-origin"
         )
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Permissions-Policy"] = "camera=(self), microphone=(), geolocation=()"
+        if request.is_secure or request.headers.get("X-Forwarded-Proto", "").split(",")[-1].strip() == "https":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; "
             "media-src 'self' blob:; frame-ancestors 'self'; object-src 'none'; base-uri 'none'; form-action 'self'"

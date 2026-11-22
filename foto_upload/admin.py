@@ -1,7 +1,11 @@
 import json
+import base64
+import hashlib
+import hmac
 import os
 import secrets
 import shutil
+import struct
 import tempfile
 import time
 import zipfile
@@ -28,7 +32,26 @@ from .storage import Problem, directory, locked, read_json, safe_name, write_jso
 from .views import admin_ok, admin_stamp, payload, require_admin, share_target, storage
 
 admin = Blueprint("admin", __name__, url_prefix="/admin")
-VERSION = "3.3.0"
+VERSION = "3.4.0"
+
+
+def totp_file():
+    return storage().root / ".admin-totp"
+
+
+def totp_code(secret, moment=None):
+    counter = int((moment or time.time()) // 30)
+    key = base64.b32decode(secret + "=" * (-len(secret) % 8))
+    digest = hmac.new(key, struct.pack(">Q", counter), hashlib.sha1).digest()
+    offset = digest[-1] & 15
+    return str((struct.unpack(">I", digest[offset:offset + 4])[0] & 0x7fffffff) % 1_000_000).zfill(6)
+
+
+def valid_totp(secret, code):
+    return isinstance(code, str) and any(
+        hmac.compare_digest(totp_code(secret, time.time() + step * 30), code.strip())
+        for step in (-1, 0, 1)
+    )
 
 
 @admin.route("", methods=["GET", "POST"])
@@ -46,14 +69,46 @@ def panel():
                 first_login=store.bootstrap.is_file(),
                 error="Das Passwort stimmt nicht.",
             ), 401
+        otp_path = totp_file()
+        if otp_path.is_file() and not valid_totp(otp_path.read_text().strip(), request.form.get("otp", "")):
+            store.limit("admin", identity, 10)
+            return render_template("login.html", manager=True, totp_enabled=True,
+                first_login=False, error="Der Sicherheitscode stimmt nicht."), 401
         session.permanent = True
         session["manager"] = admin_stamp()
         return redirect(url_for(".panel"), 303)
     if not admin_ok():
         return render_template(
-            "login.html", manager=True, first_login=storage().bootstrap.is_file()
+            "login.html", manager=True, first_login=storage().bootstrap.is_file(),
+            totp_enabled=totp_file().is_file()
         )
     return render_template("admin.html", managed_password=bool(storage().configured_hash))
+
+
+@admin.route("/api/totp", methods=["GET", "PUT", "DELETE"])
+def totp_settings():
+    require_admin()
+    path = totp_file()
+    if request.method == "GET":
+        return jsonify(enabled=path.is_file())
+    data = request.get_json(silent=True) or {}
+    if request.method == "DELETE":
+        if not path.is_file() or not valid_totp(path.read_text().strip(), data.get("code", "")):
+            raise Problem("Der Sicherheitscode stimmt nicht.", 403)
+        path.unlink()
+        return jsonify(ok=True, enabled=False)
+    if path.is_file():
+        raise Problem("Zwei-Faktor-Anmeldung ist bereits aktiviert.", 409)
+    secret = str(data.get("secret", ""))
+    if not secret:
+        secret = base64.b32encode(secrets.token_bytes(20)).decode().rstrip("=")
+        return jsonify(ok=True, secret=secret)
+    if len(secret) != 32 or not valid_totp(secret, data.get("code", "")):
+        raise Problem("Der Sicherheitscode stimmt nicht.")
+    from .storage import atomic_text
+    atomic_text(path, secret + "\n")
+    os.chmod(path, 0o600)
+    return jsonify(ok=True, enabled=True)
 
 
 @admin.post("/logout")
@@ -313,6 +368,7 @@ def backup_entries(store):
         store.admin_file,
         store.bootstrap,
         store.root / ".backup-settings.json",
+        store.root / ".admin-totp",
     ]
     for event in store.events().values():
         folder = store.folder(event)

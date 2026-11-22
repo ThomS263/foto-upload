@@ -4,7 +4,7 @@ Foto-Upload sammelt die Fotos und Videos einer Feier oder Reise auf deinem eigen
 
 **[Manuelle Installation](INSTALLATION.md)** · [Downloads für AMD64 und ARM64](https://github.com/ThomS263/foto_upload_offiziel/releases/latest) · [Android-App mit APK](https://github.com/ThomS263/foto_upload_offiziell_androidapp) · [Handyansicht](Apps/FotoUpload/screenshot-2.png)
 
-**Auf CasaOS** die verlinkte YAML öffnen und den gesamten Text im **App Store → Custom Install → Import** einfügen. Im Dialog unter `PHOTO_ADMIN_PASSWORD` ein eigenes Erstpasswort setzen und **Installieren** wählen. CasaOS lädt das passende Image. [YAML für den CasaOS-Import öffnen](https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.3.0/Apps/FotoUpload/docker-compose.yml)
+**Auf CasaOS** die verlinkte YAML öffnen und den gesamten Text im **App Store → Custom Install → Import** einfügen. Im Dialog unter `PHOTO_ADMIN_PASSWORD` ein eigenes Erstpasswort setzen und **Installieren** wählen. CasaOS lädt das passende Image. [YAML für den CasaOS-Import öffnen](https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.4.0/Apps/FotoUpload/docker-compose.yml)
 
 ## Schnellstart mit Docker Compose
 
@@ -44,6 +44,10 @@ Mit `docker compose ps` lässt sich der Status prüfen. Bei einer Installation �
 - Über die Verwaltung eine Sicherung von Originalen, Albumzugängen und Einstellungen herunterladen. Ein zweiter eingebundener Speicher kann eine Kopie erhalten.
 
 Der normale QR-Code öffnet die Albumübersicht. Vorschauen, QR-Codes und die Weboberfläche liefert der eigene Server aus. [Installation, QR-Adresse, Updates und Sicherungen](INSTALLATION.md)
+
+## Sicherheit
+
+Für Zugriff aus dem Internet muss Foto-Upload hinter HTTPS betrieben werden, etwa über einen gepflegten Reverse Proxy mit Let's Encrypt oder den vorhandenen Tailscale Funnel. HTTP ist nur für ein vertrauenswürdiges LAN gedacht. Verwende ein starkes, einzigartiges Adminpasswort und aktiviere in der Verwaltung die optionale Zwei-Faktor-Anmeldung. Rate-Limits, Same-Origin-Schutz, Upload-Signaturprüfung, Sicherheitsheader, eingeschränkte Containerrechte und Dependency-Scanning sind integriert. Details und der vertrauliche Meldeweg stehen in [SECURITY.md](SECURITY.md).
 
 ## Entwicklung und CasaOS-Paket
 

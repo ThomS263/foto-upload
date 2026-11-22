@@ -16,6 +16,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements-dev.txt
+      - name: Audit Python dependencies
+        run: pip install pip-audit && pip-audit -r requirements.txt
       - run: playwright install --with-deps chromium
       - name: Install FFmpeg for the camera and playback test
         run: |

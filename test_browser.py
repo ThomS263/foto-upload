@@ -181,6 +181,9 @@ def test_guests(site, browser, width, height):
         expect(page.locator("#network")).to_be_hidden()
         page.get_by_role("button", name="Abmelden").click()
         expect(page.get_by_role("heading", name="Gemeinsame Fotoalben")).to_be_visible()
+        page.locator("#language").select_option("en")
+        expect(page.get_by_role("heading", name="Shared photo albums")).to_be_visible()
+        page.locator("#language").select_option("de")
         assert not errors, errors
     finally:
         context.close()
