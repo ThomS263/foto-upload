@@ -367,7 +367,8 @@ def gallery_list():
                 "n": names.get(path.name, ""),
                 "t": int(stat.st_mtime),
                 "taken": capture_time(path, stat.st_mtime_ns, stat.st_size),
-                "gps": gps_position(path, stat.st_mtime_ns, stat.st_size),
+                "gps": gps_position(path, stat.st_mtime_ns, stat.st_size)
+                if event.get("expose_gps", False) else None,
                 "s": stat.st_size,
                 "has_preview": path.suffix.lower() in IMAGE
                 or (folder / ".thumbs" / (path.name + ".jpg")).is_file(),

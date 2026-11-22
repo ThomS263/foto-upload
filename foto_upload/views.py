@@ -1,6 +1,7 @@
 import hashlib
 import io
 import secrets
+import shutil
 import time
 from urllib.parse import urlencode
 
@@ -20,7 +21,7 @@ from flask import (
 from itsdangerous import BadSignature, URLSafeTimedSerializer
 from werkzeug.security import check_password_hash
 
-from .storage import Problem
+from .storage import Problem, read_json
 
 pages = Blueprint("pages", __name__)
 
@@ -190,11 +191,23 @@ def health():
     status = {"ok": True, "gallery": True, "version": VERSION}
     if request.args.get("ready") != "1":
         store = storage()
-        status["files"] = {
-            slug: sum(1 for _ in files_in(store.folder(event)))
-            for slug, event in store.events().items()
-            if not event["archived"]
-        }
+        events = store.events()
+        active = {slug: event for slug, event in events.items() if not event["archived"]}
+        paths = [path for event in active.values() for path in files_in(store.folder(event))]
+        usage = shutil.disk_usage(store.root)
+        backup_settings = store.root / ".backup-settings.json"
+        backup_status = store.root / ".backup-status.json"
+        status.update(
+            files={slug: sum(1 for _ in files_in(store.folder(event))) for slug, event in active.items()},
+            storage={"free": usage.free, "total": usage.total},
+            albums={"active": len(active), "archived": len(events) - len(active)},
+            last_upload=max((int(path.stat().st_mtime) for path in paths), default=0),
+            backup={
+                "enabled": read_json(backup_settings).get("enabled", False) if backup_settings.exists() else False,
+                **(read_json(backup_status) if backup_status.exists() else {}),
+            },
+            expired_shares=sum(1 for event in events.values() if event.get("share_expires") and event["share_expires"] <= time.time()),
+        )
     return jsonify(status)
 
 

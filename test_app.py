@@ -75,7 +75,11 @@ class AlbumsTest(unittest.TestCase):
 
     def test_login_gallery_and_separate_album(self):
         self.assertIn("Sommer", self.client.get("/").text)
-        self.assertEqual(self.client.get("/health").json["files"], {"sommer": 0})
+        health = self.client.get("/health").json
+        self.assertEqual(health["files"], {"sommer": 0})
+        self.assertEqual(health["albums"], {"active": 1, "archived": 0})
+        self.assertIn("free", health["storage"])
+        self.assertEqual(health["last_upload"], 0)
         self.assertTrue(self.client.get("/health?ready=1").json["ok"])
         self.assertEqual(self.client.get("/gallery/list").status_code, 401)
         self.assertEqual(self.client.post("/upload").status_code, 401)
@@ -93,11 +97,12 @@ class AlbumsTest(unittest.TestCase):
         manager = self.admin()
         response = manager.put("/admin/api/events/sommer", json={
             "event_date": "2027-05-04", "tone": "blue", "allow_upload": False,
-            "allow_gallery": False, "allow_download": False,
+            "allow_gallery": False, "allow_download": False, "expose_gps": True,
         })
         self.assertEqual(response.status_code, 200)
         album = manager.get("/admin/api/events").json[0]
         self.assertEqual((album["event_date"], album["tone"]), ("2027-05-04", "blue"))
+        self.assertTrue(album["expose_gps"])
         guest = self.enter(self.app.test_client())
         self.assertEqual(guest.get("/gallery/list").status_code, 403)
         self.assertEqual(guest.post("/upload").status_code, 403)
