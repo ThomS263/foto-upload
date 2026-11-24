@@ -87,4 +87,8 @@ jobs:
           docker compose down
       - name: Container logs on failure
         if: failure()
-        run: docker logs --tail 60 store-test || true
+        run: |
+          docker logs --tail 60 store-test || true
+          docker compose -f "${{ runner.temp }}/foto-upload/compose.yaml" ps || true
+          docker compose -f "${{ runner.temp }}/foto-upload/compose.yaml" logs --tail 60 || true
+          docker inspect -f '{{json .State.Health}}' foto-upload-foto-upload-1 || true
