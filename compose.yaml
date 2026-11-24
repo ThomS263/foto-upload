@@ -5,6 +5,12 @@ services:
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=256m
+    pids_limit: 256
     labels:
       web: "${PHOTO_PORT:-8080}"
       index: "/"
@@ -26,4 +32,4 @@ x-casaos:
   title:
     en_US: Foto-Upload
     de_DE: Foto-Upload
-  icon: https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.4.0/Apps/FotoUpload/icon.png
+  icon: https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.5.0/Apps/FotoUpload/icon.png

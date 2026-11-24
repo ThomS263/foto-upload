@@ -6,7 +6,7 @@
 {% block content %}
 <div id="album" data-event="{{ slug }}" data-limit="{{ config.MAX_FILE_BYTES }}">
   <div class="album-nav"><a class="back" href="/">← Alle Alben</a>
-    <form action="{{ url_for('pages.leave') }}" method="post"><button class="quiet">Abmelden</button></form></div>
+    <form action="{{ url_for('pages.leave') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="quiet">Abmelden</button></form></div>
   <header class="pagehead album-head tone-{{ event.tone }}">{% if event.has_cover %}<img src="{{ url_for('pages.cover', slug=slug) }}" alt="Titelbild des Albums">{% endif %}<div><h1>{{ event.title }}</h1>{% if event.subtitle %}<p>{{ event.subtitle }}</p>{% endif %}{% if event.event_date %}<p>📅 {{ event.event_date }}</p>{% endif %}</div></header>
   <div class="columns album-columns">
     <section class="panel upload" id="upload"{% if not event.allow_upload %} hidden{% endif %}><div class="row"><h2>Fotos hinzufügen</h2><a href="#galerie">Zur Galerie ↓</a></div>

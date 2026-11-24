@@ -12,9 +12,9 @@ Do not publish exploitable details in a public issue. Use GitHub's **Security â†
 
 - Internet-facing installations must use HTTPS through a maintained reverse proxy or Tailscale Funnel. Plain HTTP is intended only for trusted local networks.
 - Administration uses a password, rate limiting and optional TOTP two-factor authentication. Albums have separate passwords and revocable guest links.
-- Same-origin checks protect state-changing requests; cookies are HTTP-only, SameSite and Secure behind HTTPS. CSP, HSTS on HTTPS, frame, MIME, referrer and permissions headers reduce browser attack surface.
+- Same-origin checks and session-bound CSRF tokens protect browser state changes; cookies are HTTP-only, SameSite and Secure behind HTTPS. CSP, HSTS on HTTPS, frame, MIME, referrer and permissions headers reduce browser attack surface.
 - Uploads have size, extension and file-signature validation. Originals are never executed and responses use `nosniff`.
-- The container runs without extra privileges, with `no-new-privileges`, a dedicated data volume and a non-root application user for fresh installations.
+- The supplied Compose configurations enable `no-new-privileges`, drop all Linux capabilities, use a read-only root filesystem, isolate `/tmp`, limit processes and keep persistent data in a dedicated volume.
 - Dependencies are monitored by Dependabot. CI runs application, browser, container and dependency-audit checks.
 
 Certificate pinning is intentionally not used: users connect to their own changing LAN, reverse-proxy or Funnel certificates. Android relies on the operating system trust store and rejects certificate errors; the app warns about HTTP addresses.

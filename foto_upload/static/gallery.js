@@ -1,4 +1,4 @@
-import {byId, element, json, scoped} from "./client.js";
+import {byId, csrfToken, element, json, scoped} from "./client.js";
 
 const grid = byId("grid");
 const filter = byId("filter");
@@ -269,6 +269,11 @@ function downloadZip(all) {
   const form = element("form");
   form.method = "post";
   form.action = scoped("/gallery/zip");
+  const csrf = element("input");
+  csrf.type = "hidden";
+  csrf.name = "csrf_token";
+  csrf.value = csrfToken();
+  form.append(csrf);
   for (const value of all ? ["1"] : chosen) {
     const field = element("input");
     field.type = "hidden";

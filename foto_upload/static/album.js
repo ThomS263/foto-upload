@@ -1,4 +1,4 @@
-import {byId, element, json, scoped} from "./client.js";
+import {byId, csrfToken, element, json, scoped} from "./client.js";
 import {loadGallery} from "./gallery.js";
 
 const queue = [];
@@ -91,6 +91,7 @@ function send(path, data, update) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", scoped(path));
+    xhr.setRequestHeader("X-CSRF-Token", csrfToken());
     xhr.timeout = 180000;
     xhr.responseType = "json";
     xhr.upload.onprogress = event => {

@@ -3,7 +3,7 @@
 {% block scripts %}<script type="module" src="{{ url_for('static', filename='admin.js') }}"></script>{% endblock %}
 {% block content %}
 <div class="album-nav"><a class="back" href="/">← Alle Alben</a>
-  <form action="{{ url_for('admin.logout') }}" method="post"><button class="quiet">Abmelden</button></form></div>
+  <form action="{{ url_for('admin.logout') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="quiet">Abmelden</button></form></div>
 <header class="pagehead"><h1>Verwaltung</h1></header>
 <p id="version-status" role="status">Version wird geprüft …</p>
 <div class="admin-layout"><section><h2>Alben verwalten</h2>

@@ -2,12 +2,13 @@
 
 import errno
 import os
+import secrets
 import threading
 import time
 from datetime import timedelta
 from urllib.parse import urlsplit
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, session
 from flask.sessions import SecureCookieSessionInterface
 from werkzeug.exceptions import HTTPException
 
@@ -88,6 +89,7 @@ def create_app(config=None):
 
     @app.before_request
     def check_origin():
+        session.setdefault("csrf", secrets.token_urlsafe(32))
         if request.method in {"GET", "HEAD", "OPTIONS"}:
             return
         origin = request.headers.get("Origin")
@@ -95,10 +97,22 @@ def create_app(config=None):
             origin and urlsplit(origin).netloc not in {request.host, base.netloc} - {""}
         ):
             raise Problem("Diese Anfrage stammt von einer anderen Seite.", 403)
+        # Browsers provide Origin and/or Fetch Metadata. Requiring a session-bound
+        # token for those requests protects forms and JavaScript calls while
+        # keeping deliberate non-browser API clients backwards compatible.
+        if origin or request.headers.get("Sec-Fetch-Site"):
+            supplied = request.headers.get("X-CSRF-Token") or request.form.get("csrf_token", "")
+            expected = session.get("csrf", "")
+            if not expected or not secrets.compare_digest(str(supplied), str(expected)):
+                raise Problem("Die Sicherheitsprüfung ist abgelaufen. Bitte die Seite neu laden.", 403)
         if request.endpoint == "media.upload_chunk":
             request.max_content_length = 10 * 1024**2
         elif request.endpoint != "media.upload":
             request.max_content_length = 512 * 1024
+
+    @app.context_processor
+    def csrf_context():
+        return {"csrf_token": lambda: session.get("csrf", "")}
 
     @app.after_request
     def headers(response):

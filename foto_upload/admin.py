@@ -32,7 +32,7 @@ from .storage import Problem, directory, locked, read_json, safe_name, write_jso
 from .views import admin_ok, admin_stamp, payload, require_admin, share_target, storage
 
 admin = Blueprint("admin", __name__, url_prefix="/admin")
-VERSION = "3.4.0"
+VERSION = "3.5.0"
 
 
 def totp_file():

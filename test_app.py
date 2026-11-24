@@ -88,6 +88,28 @@ class AlbumsTest(unittest.TestCase):
             self.client.post("/enter", json={"event": "sommer", "password": "x"}).status_code, 401
         )
         self.enter()
+
+    def test_browser_writes_require_csrf_token(self):
+        page = self.client.get("/")
+        self.assertEqual(page.status_code, 200)
+        blocked = self.client.post(
+            "/enter",
+            json={"event": "sommer", "password": "Gast"},
+            headers={"Origin": "https://alben.example", "Sec-Fetch-Site": "same-origin"},
+        )
+        self.assertEqual(blocked.status_code, 403)
+        with self.client.session_transaction() as session:
+            token = session["csrf"]
+        allowed = self.client.post(
+            "/enter",
+            json={"event": "sommer", "password": "Gast"},
+            headers={
+                "Origin": "https://alben.example",
+                "Sec-Fetch-Site": "same-origin",
+                "X-CSRF-Token": token,
+            },
+        )
+        self.assertEqual(allowed.status_code, 200)
         self.assertIn('id="files"', self.client.get("/event/sommer").text)
         self.assertEqual(self.client.get("/gallery/list?event=sommer").json["items"], [])
         self.assertEqual(self.client.get("/gallery/list?event=winter").status_code, 409)

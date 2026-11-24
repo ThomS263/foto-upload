@@ -7,6 +7,7 @@
     <h1>{{ 'Verwaltung' if manager else event.title }}</h1>
     {% if first_login %}<p>Dein Erstpasswort steht im Container in <code>/data/.initial-admin-password</code>. Du kannst es nach der Anmeldung ändern.</p>{% endif %}
     <form method="post" action="{{ url_for('admin.panel') if manager else url_for('pages.enter') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       {% if not manager %}<input type="hidden" name="event" value="{{ slug }}">{% endif %}
       <label for="password">{{ 'Adminpasswort' if manager else 'Albumpasswort' }}</label>
       <div class="password"><input id="password" name="password" type="password" autocomplete="current-password" maxlength="256" required>
