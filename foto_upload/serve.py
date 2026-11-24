@@ -31,6 +31,7 @@ def main():
             "4",
             "--timeout",
             "180",
+            "--no-control-socket",
             sys.argv[1],
         ],
     )
