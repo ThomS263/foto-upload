@@ -11,7 +11,7 @@
     {% for slug, event in albums %}
       <a class="album-link" href="{{ url_for('pages.album', slug=slug) }}">
         <span class="album-monogram tone-{{ loop.index0 % 3 }}" aria-hidden="true">{{ event.title[:1]|upper }}</span>
-        <span class="grow"><strong>{{ event.title }}</strong>{% if event.subtitle %}<small>{{ event.subtitle }}</small>{% endif %}</span>
+        <span class="grow"><strong>{{ event.title }}</strong>{% if event.subtitle %}<small>{{ event.subtitle }}</small>{% endif %}<small class="album-meta">🔒 Passwortgeschützt{% if event.event_date %} · 📅 {{ event.event_date }}{% endif %}</small></span>
         <span class="arrow" aria-hidden="true">→</span>
       </a>
     {% else %}

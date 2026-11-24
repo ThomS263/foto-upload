@@ -82,6 +82,7 @@ function report() {
   summary.textContent = queue.length ? done + " von " + queue.length + " gespeichert" +
     (failed ? " · " + failed + " fehlgeschlagen" : "") : "";
   byId("retry-all").hidden = failed === 0;
+  byId("upload-complete").hidden = !queue.length || done !== queue.length || failed > 0;
   try { window.AndroidUpload?.setProgress(running > 0, running, done, queue.length); } catch {
     try { window.AndroidUpload?.setActive(running > 0, running); } catch { /* Browser ohne Android-Brücke. */ }
   }
@@ -251,3 +252,12 @@ document.addEventListener("visibilitychange", () => {
 });
 network();
 loadGallery();
+
+// Keep the fixed mobile navigation from covering a QR code while it is scanned.
+const mobileNav = document.querySelector(".mobile-album-nav");
+const qrImage = document.querySelector(".qr-image");
+if (mobileNav && qrImage && "IntersectionObserver" in window) {
+  new IntersectionObserver(entries => {
+    mobileNav.classList.toggle("avoid-qr", entries[0].isIntersecting);
+  }, { threshold: 0.15 }).observe(qrImage);
+}

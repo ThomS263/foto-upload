@@ -6,6 +6,12 @@
   <form action="{{ url_for('admin.logout') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="quiet">Abmelden</button></form></div>
 <header class="pagehead"><h1>Verwaltung</h1></header>
 <p id="version-status" role="status">Version wird geprüft …</p>
+<section class="admin-summary" aria-label="Statusübersicht">
+  <div><small>Alben</small><strong id="stat-albums">…</strong></div>
+  <div><small>Dateien</small><strong id="stat-files">…</strong></div>
+  <div><small>Freier Speicher</small><strong id="stat-storage">…</strong></div>
+  <div><small>Sicherheit</small><strong id="stat-security">…</strong></div>
+</section>
 <div class="admin-layout"><section><h2>Alben verwalten</h2>
   <div class="gallery-tools">
     <label>Alben suchen<input id="album-search" type="search" placeholder="Albumname"></label>

@@ -19,6 +19,7 @@
       <p class="hint" id="upload-hint">Die Übertragung startet nach der Auswahl. Lass die Seite geöffnet, bis alle Dateien gespeichert sind.</p>
       <p id="network" class="error" role="status" hidden>Du bist offline. Offene Uploads laufen weiter, sobald die Verbindung zurück ist.</p>
       <p id="summary" role="status" aria-live="polite"></p>
+      <div id="upload-complete" class="success-card" role="status" hidden><strong>✓ Alles gespeichert</strong><span>Deine Fotos und Videos sind sicher angekommen.</span><a class="button primary" href="#galerie">Galerie ansehen</a></div>
       <ul id="jobs" class="jobs"></ul><button id="retry-all" hidden>Fehlgeschlagene erneut versuchen</button>
       <label class="check"><input type="checkbox" id="speak">Bestätigung vorlesen</label>
       <noscript>Zum Hochladen und für die Galerie bitte JavaScript einschalten.</noscript>
@@ -44,5 +45,6 @@
     <div id="stage"></div><div class="viewer-actions"><button id="prev">← Zurück</button><button id="favorite" hidden>♡ Favorit</button><button id="play">▶ Diashow</button><span id="media-info">Bild antippen zum Vergrößern</span><a class="button" id="original"{% if not event.allow_download %} hidden{% endif %} download>Original laden</a><button id="next">Weiter →</button></div>
     <section id="comments" class="comments" hidden><h3>Kommentare</h3><div id="comment-list"></div><form id="comment-form"><label>Kommentar<input id="comment-text" maxlength="240" required placeholder="Schreibe etwas Nettes …"></label><button>Absenden</button></form><p id="comment-status" role="status"></p></section>
   </dialog>
+  <nav class="mobile-album-nav" aria-label="Albumnavigation"><a href="/">⌂<span>Start</span></a><a href="#upload">↑<span>Upload</span></a><a href="#galerie">▦<span>Galerie</span></a></nav>
 </div>
 {% endblock %}

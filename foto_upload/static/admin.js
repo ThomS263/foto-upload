@@ -7,6 +7,7 @@ const formatSize = bytes => new Intl.NumberFormat("de", {maximumFractionDigits: 
 async function loadStorage() {
   try {
     const disk = await json("/admin/api/storage");
+    byId("stat-storage").textContent = formatSize(disk.free);
     byId("disk-space").textContent = formatSize(disk.free) + " von " + formatSize(disk.total) + " frei" +
       (disk.free <= disk.reserve ? " · Zu wenig Speicher für weitere Uploads." : "");
   } catch (error) { byId("disk-space").textContent = error.message; }
@@ -149,6 +150,8 @@ function editor(album, opened) {
 
 async function load(openSlug, message) {
   albums = await json("/admin/api/events");
+  byId("stat-albums").textContent = String(albums.filter(album => !album.archived).length);
+  byId("stat-files").textContent = new Intl.NumberFormat("de").format(albums.reduce((sum, album) => sum + album.files, 0));
   openAlbum = openSlug;
   renderAlbums();
   byId("admin-status").textContent = message || (albums.length ? "" : "Es sind noch keine Alben angelegt.");
@@ -170,6 +173,8 @@ async function diagnostics() {
   byId("security-status").textContent = data.issues.length
     ? data.issues.length + " Hinweis(e) gefunden."
     : "✓ HTTPS, Speicher und Sicherungsstatus sehen gut aus.";
+  byId("stat-security").textContent = data.issues.length ? data.issues.length + " Hinweis(e)" : "✓ Gut";
+  byId("stat-security").classList.toggle("warning", data.issues.length > 0);
   byId("security-issues").replaceChildren(...data.issues.map(issue => element("li", issue)));
   byId("update-command").value = data.update_command;
 }
