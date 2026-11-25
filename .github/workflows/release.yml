@@ -15,7 +15,7 @@ jobs:
     env:
       AppID: foto-upload
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Read and verify the version
         id: version
         run: |
