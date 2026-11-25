@@ -9,7 +9,7 @@ Für Android gibt es zusätzlich eine Begleit-App mit QR-Scanner, Teilen-Funktio
 1. Die verlinkte YAML im Browser öffnen und den **gesamten Text** kopieren. [CasaOS-Konfiguration für Foto-Upload 3.6.0](https://raw.githubusercontent.com/ThomS263/foto-upload/v3.6.0/Apps/FotoUpload/docker-compose.yml)
 2. Im CasaOS-Dashboard den **App Store → Custom Install** öffnen. Oben rechts das **Import**-Symbol wählen, die YAML einfügen und bestätigen. [CasaOS-Dokumentation](https://wiki.casaos.io/en/apps)
 3. Im Installationsdialog unter **Umgebungsvariablen** bei `PHOTO_ADMIN_PASSWORD` ein eigenes Erstpasswort eingeben. Bei einer bestehenden externen HTTPS-Adresse kannst du auch `PHOTO_PUBLIC_URL` setzen. Der Host-Port ist standardmäßig `8080`, der Datenordner auf dem Server `/DATA/AppData/foto-upload/data`.
-4. **Installieren** wählen. CasaOS lädt das Image `ghcr.io/thoms263/foto-upload:3.6.0` für die passende Architektur. Öffne die neue Kachel **Foto-Upload**, wähle **Verwaltung** und melde dich mit deinem Erstpasswort an.
+4. **Installieren** wählen. CasaOS lädt das Image `ghcr.io/thoms263/foto_upload_offiziel:3.6.0` für die passende Architektur. Öffne die neue Kachel **Foto-Upload**, wähle **Verwaltung** und melde dich mit deinem Erstpasswort an.
 
 Wer das Passwortfeld leer lässt, erhält beim ersten Start ein Zufallspasswort. Du kannst es im Serverterminal mit `docker exec foto-upload cat /data/.initial-admin-password` auslesen.
 

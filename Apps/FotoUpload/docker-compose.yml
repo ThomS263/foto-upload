@@ -1,7 +1,7 @@
 name: foto-upload
 services:
   foto-upload:
-    image: ghcr.io/thoms263/foto-upload:3.6.0
+    image: ghcr.io/thoms263/foto_upload_offiziel:3.6.0
     deploy:
       resources:
         reservations:
