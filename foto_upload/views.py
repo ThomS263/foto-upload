@@ -62,7 +62,17 @@ def admin_stamp():
 
 
 def admin_ok():
-    return bool(session.get("manager")) and session["manager"] == admin_stamp()
+    if not session.get("manager") or session["manager"] != admin_stamp():
+        return False
+    now = int(time.time())
+    seen = session.get("manager_seen", 0)
+    if not isinstance(seen, int) or now - seen > current_app.config["ADMIN_IDLE_SECONDS"]:
+        session.pop("manager", None)
+        session.pop("manager_seen", None)
+        return False
+    if now - seen >= 60:
+        session["manager_seen"] = now
+    return True
 
 
 def require_admin():
@@ -189,7 +199,9 @@ def health():
     from .media import files_in
 
     status = {"ok": True, "gallery": True, "version": VERSION}
-    if request.args.get("ready") != "1":
+    # Detailed album and storage information is useful to administrators but
+    # should not be exposed to unauthenticated internet health probes.
+    if request.args.get("ready") != "1" and admin_ok():
         store = storage()
         events = store.events()
         active = {slug: event for slug, event in events.items() if not event["archived"]}

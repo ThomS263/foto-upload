@@ -91,6 +91,7 @@ class Store:
         self.admin_file = self.root / ".admin_password_hash"
         self.bootstrap = self.root / ".initial-admin-password"
         self.public_url_file = self.root / ".public-url"
+        self.audit_file = self.root / ".audit.jsonl"
         self.configured_hash = configured_hash
         with self.transaction():
             secret_file = self.root / ".secret"
@@ -99,12 +100,15 @@ class Store:
             self.secret = secret_file.read_text().strip()
             if not self.secret:
                 raise ValueError("Die vorhandene .secret ist leer.")
+            os.chmod(secret_file, 0o600)
             if not configured_hash and not self.admin_file.exists():
                 if not password:
                     if not self.bootstrap.exists():
                         atomic_text(self.bootstrap, secrets.token_urlsafe(22) + "\n")
                     password = self.bootstrap.read_text().strip()
                 atomic_text(self.admin_file, generate_password_hash(password))
+            if self.admin_file.exists():
+                os.chmod(self.admin_file, 0o600)
             self._discover(seeds)
         with closing(self._rates()) as db:
             db.execute(
@@ -215,6 +219,33 @@ class Store:
         with self.transaction():
             atomic_text(self.admin_file, generate_password_hash(password_value(password, 10)))
             self.bootstrap.unlink(missing_ok=True)
+
+    def audit(self, action, **details):
+        """Append a bounded, credential-free administrator activity record."""
+        allowed = {key: plain(str(value), 120) for key, value in details.items()}
+        record = {"time": int(time.time()), "action": plain(action, 64), **allowed}
+        with locked(self.locks / "audit"):
+            if self.audit_file.exists() and self.audit_file.stat().st_size > 2 * 1024**2:
+                previous = self.audit_file.with_suffix(".jsonl.1")
+                previous.unlink(missing_ok=True)
+                os.replace(self.audit_file, previous)
+            with self.audit_file.open("a", encoding="utf-8") as output:
+                output.write(json.dumps(record, ensure_ascii=False) + "\n")
+            os.chmod(self.audit_file, 0o600)
+
+    def audit_records(self, maximum=100):
+        if not self.audit_file.exists() or self.audit_file.is_symlink():
+            return []
+        rows = []
+        with self.audit_file.open(encoding="utf-8", errors="replace") as source:
+            for line in source:
+                try:
+                    record = json.loads(line)
+                    if isinstance(record, dict):
+                        rows.append(record)
+                except ValueError:
+                    continue
+        return rows[-maximum:][::-1]
 
     def change(self, slug, values, action):
         if not isinstance(slug, str) or not SLUG.fullmatch(slug):

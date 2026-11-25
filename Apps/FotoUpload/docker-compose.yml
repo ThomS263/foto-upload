@@ -1,7 +1,7 @@
 name: foto-upload
 services:
   foto-upload:
-    image: ghcr.io/thoms263/foto_upload_offiziel:3.5.1
+    image: ghcr.io/thoms263/foto-upload:3.6.0
     deploy:
       resources:
         reservations:
@@ -74,20 +74,20 @@ x-casaos:
   category: Media
   author: ThomS263
   developer: ThomS263
-  version: "3.5.1"
-  update_at: "2026-11-24"
+  version: "3.6.0"
+  update_at: "2026-11-25"
   release_notes:
-    en_US: Improves mobile album navigation, upload confirmation, gallery presentation, album cards and the administration status overview.
-    de_DE: Verbessert die mobile Albumnavigation, Upload-Bestätigung, Galeriedarstellung, Albumkarten und Statusübersicht der Verwaltung.
-  website: https://github.com/ThomS263/foto_upload_offiziel
-  repo: https://github.com/ThomS263/foto_upload_offiziel
-  support: https://github.com/ThomS263/foto_upload_offiziel/issues
-  docs: https://github.com/ThomS263/foto_upload_offiziel/blob/main/INSTALLATION.md
-  icon: https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.5.1/Apps/FotoUpload/icon.png
-  thumbnail: https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.5.1/Apps/FotoUpload/thumbnail.png
+    en_US: Adds private administrator audit records, idle session expiry, less revealing health checks and stronger upload and ZIP rate limits.
+    de_DE: Ergänzt private Admin-Aktivitätsprotokolle, Sitzungsablauf bei Inaktivität, sparsamere Health-Antworten und stärkere Upload- und ZIP-Limits.
+  website: https://github.com/ThomS263/foto-upload
+  repo: https://github.com/ThomS263/foto-upload
+  support: https://github.com/ThomS263/foto-upload/issues
+  docs: https://github.com/ThomS263/foto-upload/blob/main/INSTALLATION.md
+  icon: https://raw.githubusercontent.com/ThomS263/foto-upload/v3.6.0/Apps/FotoUpload/icon.png
+  thumbnail: https://raw.githubusercontent.com/ThomS263/foto-upload/v3.6.0/Apps/FotoUpload/thumbnail.png
   screenshot_link:
-    - https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.5.1/Apps/FotoUpload/screenshot-1.png
-    - https://raw.githubusercontent.com/ThomS263/foto_upload_offiziel/v3.5.1/Apps/FotoUpload/screenshot-2.png
+    - https://raw.githubusercontent.com/ThomS263/foto-upload/v3.6.0/Apps/FotoUpload/screenshot-1.png
+    - https://raw.githubusercontent.com/ThomS263/foto-upload/v3.6.0/Apps/FotoUpload/screenshot-2.png
   tips:
     before_install:
       en_US: Open /admin to create your first album and enter a Funnel URL. The /data container path is already configured and must not be changed. With no initial password configured, read /data/.initial-admin-password in the container.

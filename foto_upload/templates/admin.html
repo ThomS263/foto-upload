@@ -58,6 +58,11 @@
       <label>Sechsstelliger Sicherheitscode<input name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6"></label>
       <div class="actions"><button type="button" id="totp-setup">Einrichten</button><button type="submit">Aktivieren</button><button type="button" id="totp-disable">Deaktivieren</button></div><p role="status"></p></form>
   </details>
+  <details class="panel"><summary>Admin-Aktivitäten</summary>
+    <p>Die letzten Verwaltungsänderungen werden ohne Passwörter und IP-Adressen protokolliert.</p>
+    <button type="button" id="load-audit">Aktivitäten laden</button>
+    <p id="audit-status" role="status"></p><ul id="audit-list" class="admin-files"></ul>
+  </details>
 </div></div>
 <template id="album-editor">
   <details class="panel editor"><summary><strong data-title></strong><small data-info></small></summary>

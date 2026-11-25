@@ -291,4 +291,17 @@ byId("cleanup").onclick = async () => {
     byId("cleanup-result").textContent = result.removed + " verwaiste Vorschauen entfernt.";
   } catch (error) { byId("cleanup-result").textContent = error.message; }
 };
+byId("load-audit").onclick = async () => {
+  const status = byId("audit-status");
+  try {
+    const data = await json("/admin/api/audit");
+    const formatter = new Intl.DateTimeFormat("de", {dateStyle: "short", timeStyle: "short"});
+    byId("audit-list").replaceChildren(...data.records.map(record => {
+      const details = Object.entries(record).filter(([key]) => !["time", "action"].includes(key))
+        .map(([key, value]) => key + ": " + value).join(" · ");
+      return element("li", formatter.format(new Date(record.time * 1000)) + " · " + record.action + (details ? " · " + details : ""));
+    }));
+    status.textContent = data.records.length ? data.records.length + " Einträge" : "Noch keine Aktivitäten vorhanden.";
+  } catch (error) { status.textContent = error.message; }
+};
 load().catch(error => { byId("admin-status").textContent = error.message; });

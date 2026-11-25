@@ -32,7 +32,7 @@ from .storage import Problem, directory, locked, read_json, safe_name, write_jso
 from .views import admin_ok, admin_stamp, payload, require_admin, share_target, storage
 
 admin = Blueprint("admin", __name__, url_prefix="/admin")
-VERSION = "3.5.1"
+VERSION = "3.6.0"
 
 
 def totp_file():
@@ -63,6 +63,7 @@ def panel():
         password = request.form.get("password", "")
         if len(password) > 256 or not check_password_hash(store.admin_hash(), password):
             store.limit("admin", identity, 10)
+            store.audit("admin.login_failed", reason="password")
             return render_template(
                 "login.html",
                 manager=True,
@@ -72,10 +73,13 @@ def panel():
         otp_path = totp_file()
         if otp_path.is_file() and not valid_totp(otp_path.read_text().strip(), request.form.get("otp", "")):
             store.limit("admin", identity, 10)
+            store.audit("admin.login_failed", reason="totp")
             return render_template("login.html", manager=True, totp_enabled=True,
                 first_login=False, error="Der Sicherheitscode stimmt nicht."), 401
         session.permanent = True
         session["manager"] = admin_stamp()
+        session["manager_seen"] = int(time.time())
+        store.audit("admin.login")
         return redirect(url_for(".panel"), 303)
     if not admin_ok():
         return render_template(
@@ -96,6 +100,7 @@ def totp_settings():
         if not path.is_file() or not valid_totp(path.read_text().strip(), data.get("code", "")):
             raise Problem("Der Sicherheitscode stimmt nicht.", 403)
         path.unlink()
+        storage().audit("admin.totp_disabled")
         return jsonify(ok=True, enabled=False)
     if path.is_file():
         raise Problem("Zwei-Faktor-Anmeldung ist bereits aktiviert.", 409)
@@ -108,12 +113,16 @@ def totp_settings():
     from .storage import atomic_text
     atomic_text(path, secret + "\n")
     os.chmod(path, 0o600)
+    storage().audit("admin.totp_enabled")
     return jsonify(ok=True, enabled=True)
 
 
 @admin.post("/logout")
 def logout():
+    if admin_ok():
+        storage().audit("admin.logout")
     session.pop("manager", None)
+    session.pop("manager_seen", None)
     return redirect(url_for("pages.home"), 303)
 
 
@@ -157,6 +166,7 @@ def public_url():
         ):
             raise Problem("Bitte eine vollständige HTTPS-Adresse ohne zusätzlichen Pfad eingeben.")
     storage().set_public_url(value)
+    storage().audit("settings.public_url", configured=bool(value))
     return jsonify(ok=True, url=value)
 
 
@@ -166,7 +176,7 @@ def version():
     result = {"current": VERSION, "latest": None}
     try:
         req = Request(
-            "https://api.github.com/repos/ThomS263/foto_upload_offiziel/releases/latest",
+            "https://api.github.com/repos/ThomS263/foto-upload/releases/latest",
             headers={"User-Agent": "Foto-Upload"},
         )
         with urlopen(req, timeout=4) as response:
@@ -249,6 +259,7 @@ def delete_file(slug, filename):
         if target.exists() or target.is_symlink():
             raise Problem("Eine Datei mit diesem Namen liegt bereits im Papierkorb.", 409)
         os.replace(path, target)
+    storage().audit("file.trash", album=slug, file=filename)
     return jsonify(ok=True)
 
 
@@ -271,6 +282,7 @@ def trash_files(slug):
         if target.exists() or target.is_symlink():
             raise Problem("Im Album gibt es bereits eine Datei mit diesem Namen.", 409)
         os.replace(source, target)
+    storage().audit("file.restore", album=slug, file=filename)
     return jsonify(ok=True)
 
 
@@ -281,6 +293,7 @@ def albums():
     if request.method == "POST":
         data = payload()
         store.change(data.get("slug"), data, "create")
+        store.audit("album.create", album=data.get("slug"))
         return jsonify(ok=True), 201
     results = []
     for slug, event in store.events().items():
@@ -313,6 +326,7 @@ def edit(slug):
         storage().change(slug, {}, "archive")
     else:
         storage().change(slug, payload(), "edit")
+    storage().audit("album.archive" if request.method == "DELETE" else "album.edit", album=slug)
     return jsonify(ok=True)
 
 
@@ -329,6 +343,7 @@ def event_cover(slug):
     with locked(storage().locks / ("cover-" + slug)):
         if not preview(image.stream, target):
             raise Problem("Das Titelbild konnte nicht gelesen werden.")
+    storage().audit("album.cover_changed", album=slug)
     return jsonify(ok=True)
 
 
@@ -336,6 +351,7 @@ def event_cover(slug):
 def restore(slug):
     require_admin()
     storage().change(slug, {}, "restore")
+    storage().audit("album.restore", album=slug)
     return jsonify(ok=True)
 
 
@@ -344,6 +360,8 @@ def password():
     require_admin()
     storage().rotate_admin(payload().get("password"))
     session["manager"] = admin_stamp()
+    session["manager_seen"] = int(time.time())
+    storage().audit("admin.password_changed")
     return jsonify(ok=True)
 
 
@@ -358,7 +376,14 @@ def cleanup():
             for thumb in orphan_previews(folder):
                 thumb.unlink()
                 removed += 1
+    store.audit("storage.cleanup", removed=removed)
     return jsonify(ok=True, removed=removed)
+
+
+@admin.get("/api/audit")
+def audit_records():
+    require_admin()
+    return jsonify(records=storage().audit_records())
 
 
 def backup_entries(store):
@@ -369,6 +394,7 @@ def backup_entries(store):
         store.bootstrap,
         store.root / ".backup-settings.json",
         store.root / ".admin-totp",
+        store.audit_file,
     ]
     for event in store.events().values():
         folder = store.folder(event)
@@ -447,6 +473,7 @@ def backup_settings():
             raise Problem("Bitte zuerst einen zweiten Speicher als PHOTO_BACKUP_DIR einbinden.")
         with locked(store.locks / "automatic-backup"):
             write_json(path, {"enabled": enabled})
+        store.audit("backup.setting", enabled=enabled)
     settings = read_json(path) if path.exists() else {}
     status = store.root / ".backup-status.json"
     return jsonify(
@@ -459,6 +486,7 @@ def backup():
     require_admin()
     store = storage()
     entries = backup_entries(store)
+    store.audit("backup.download")
     filename = time.strftime("foto-upload-%Y%m%d-%H%M%S-") + secrets.token_hex(3) + ".zip"
     destination = current_app.config["BACKUP_DIR"]
     if not destination:

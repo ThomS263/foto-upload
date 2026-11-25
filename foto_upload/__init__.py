@@ -39,6 +39,7 @@ def create_app(config=None):
         SESSION_COOKIE_SAMESITE="Lax",
         SESSION_REFRESH_EACH_REQUEST=False,
         PERMANENT_SESSION_LIFETIME=timedelta(hours=12),
+        ADMIN_IDLE_SECONDS=30 * 60,
         MAX_FORM_PARTS=32,
         MAX_FORM_MEMORY_SIZE=512 * 1024,
     )

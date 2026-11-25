@@ -309,6 +309,7 @@ def receive(chunked):
             if index != 0:
                 raise Problem("Bitte die Übertragung beim ersten Block beginnen.", 409)
             store.limit("upload:" + slug, session["device"], 1000)
+            store.limit("upload-ip:" + slug, request.remote_addr or "local", 300)
             safe = secure_filename(Path(filename).stem)[:60] or "datei"
             final = f"{time.strftime('%Y%m%d-%H%M%S')}-{identifier}-{safe}{suffix}"
             state = {
@@ -539,6 +540,7 @@ def gallery_zip():
         raise Problem("Downloads sind für dieses Album nicht freigegeben.", 403)
     folder = storage().folder(event)
     store = storage()
+    store.limit("zip:" + slug, session["device"], 20)
     if request.method == "GET":
         ticket = request.args.get("ticket", "")
         if not UPLOAD_ID.fullmatch(ticket):

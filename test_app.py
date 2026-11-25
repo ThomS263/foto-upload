@@ -77,10 +77,7 @@ class AlbumsTest(unittest.TestCase):
     def test_login_gallery_and_separate_album(self):
         self.assertIn("Sommer", self.client.get("/").text)
         health = self.client.get("/health").json
-        self.assertEqual(health["files"], {"sommer": 0})
-        self.assertEqual(health["albums"], {"active": 1, "archived": 0})
-        self.assertIn("free", health["storage"])
-        self.assertEqual(health["last_upload"], 0)
+        self.assertNotIn("files", health)
         self.assertTrue(self.client.get("/health?ready=1").json["ok"])
         self.assertEqual(self.client.get("/gallery/list").status_code, 401)
         self.assertEqual(self.client.post("/upload").status_code, 401)
@@ -88,6 +85,19 @@ class AlbumsTest(unittest.TestCase):
             self.client.post("/enter", json={"event": "sommer", "password": "x"}).status_code, 401
         )
         self.enter()
+
+    def test_admin_health_audit_and_idle_timeout(self):
+        manager = self.admin()
+        health = manager.get("/health").json
+        self.assertEqual(health["files"], {"sommer": 0})
+        self.assertIn("free", health["storage"])
+        manager.put("/admin/api/events/sommer", json={"subtitle": "Geändert"})
+        records = manager.get("/admin/api/audit").json["records"]
+        self.assertEqual(records[0]["action"], "album.edit")
+        self.assertNotIn("password", json.dumps(records).lower())
+        with manager.session_transaction() as user_session:
+            user_session["manager_seen"] = int(time.time()) - 1900
+        self.assertEqual(manager.get("/admin/api/events").status_code, 401)
 
     def test_browser_writes_require_csrf_token(self):
         page = self.client.get("/")
