@@ -254,6 +254,10 @@ def publish(folder, job, state):
     if target.is_file():
         return
     body = job / "body"
+    quota = int(state.get("quota_bytes", 0))
+    if quota and sum(path.stat().st_size for path in files_in(folder)) + body.stat().st_size > quota:
+        clear_job(job)
+        raise Problem("Das Speicherlimit dieses Albums ist erreicht.", 507)
     with body.open("rb") as source:
         if not matches(source.read(32), target.suffix):
             clear_job(job)
@@ -319,6 +323,7 @@ def receive(chunked):
                 "next": 0,
                 "size": 0,
                 "guest": plain(request.form.get("name", ""), 40),
+                "quota_bytes": int(event.get("quota_bytes", 0)),
             }
             directory(job)
             write_json(state_file, state)

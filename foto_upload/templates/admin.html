@@ -63,6 +63,10 @@
     <button type="button" id="load-audit">Aktivitäten laden</button>
     <p id="audit-status" role="status"></p><ul id="audit-list" class="admin-files"></ul>
   </details>
+  <details class="panel"><summary>Angemeldete Geräte</summary>
+    <p>Damit werden alle anderen Admin-Sitzungen sofort ungültig. Dieses Gerät bleibt angemeldet.</p>
+    <button type="button" id="revoke-sessions">Alle anderen Geräte abmelden</button><p id="session-status" role="status"></p>
+  </details>
 </div></div>
 <template id="album-editor">
   <details class="panel editor"><summary><strong data-title></strong><small data-info></small></summary>
@@ -70,6 +74,7 @@
       <label>Beschreibung<input name="subtitle" maxlength="180"></label>
       <label>Datum<input name="event_date" type="date"></label>
       <label>Farbe<select name="tone"><option value="green">Grün</option><option value="blue">Blau</option><option value="rose">Rosa</option><option value="gold">Gold</option></select></label>
+      <label>Speicherlimit in GiB <small>(0 = unbegrenzt)</small><input name="quota_gb" type="number" min="0" max="102400" step="0.1" value="0"></label>
       <label>Titelbild <small>(optional)</small><input name="cover" type="file" accept="image/*"></label>
       <label>Neues Albumpasswort<input name="password" type="password" maxlength="256" autocomplete="new-password" placeholder="Für Passwortwechsel ausfüllen"></label>
       <label class="check"><input name="public_access" type="checkbox">Gästelink ohne Passwort freigeben</label>

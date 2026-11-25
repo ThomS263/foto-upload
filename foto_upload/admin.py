@@ -32,11 +32,33 @@ from .storage import Problem, directory, locked, read_json, safe_name, write_jso
 from .views import admin_ok, admin_stamp, payload, require_admin, share_target, storage
 
 admin = Blueprint("admin", __name__, url_prefix="/admin")
-VERSION = "3.6.0"
+VERSION = "3.7.0"
 
 
 def totp_file():
     return storage().root / ".admin-totp"
+
+
+def recovery_file():
+    return storage().root / ".admin-recovery-codes"
+
+
+def use_recovery_code(code):
+    path = recovery_file()
+    if not path.is_file() or not isinstance(code, str):
+        return False
+    digest = hashlib.sha256(code.strip().upper().encode()).hexdigest()
+    with locked(storage().locks / "recovery-codes"):
+        remaining = [row.strip() for row in path.read_text().splitlines() if row.strip()]
+        match = next((row for row in remaining if hmac.compare_digest(row, digest)), None)
+        if not match:
+            return False
+        remaining.remove(match)
+        from .storage import atomic_text
+        atomic_text(path, "\n".join(remaining) + ("\n" if remaining else ""))
+        os.chmod(path, 0o600)
+    storage().audit("admin.recovery_code_used", remaining=len(remaining))
+    return True
 
 
 def totp_code(secret, moment=None):
@@ -71,7 +93,10 @@ def panel():
                 error="Das Passwort stimmt nicht.",
             ), 401
         otp_path = totp_file()
-        if otp_path.is_file() and not valid_totp(otp_path.read_text().strip(), request.form.get("otp", "")):
+        otp = request.form.get("otp", "")
+        if otp_path.is_file() and not (
+            valid_totp(otp_path.read_text().strip(), otp) or use_recovery_code(otp)
+        ):
             store.limit("admin", identity, 10)
             store.audit("admin.login_failed", reason="totp")
             return render_template("login.html", manager=True, totp_enabled=True,
@@ -100,6 +125,7 @@ def totp_settings():
         if not path.is_file() or not valid_totp(path.read_text().strip(), data.get("code", "")):
             raise Problem("Der Sicherheitscode stimmt nicht.", 403)
         path.unlink()
+        recovery_file().unlink(missing_ok=True)
         storage().audit("admin.totp_disabled")
         return jsonify(ok=True, enabled=False)
     if path.is_file():
@@ -113,8 +139,25 @@ def totp_settings():
     from .storage import atomic_text
     atomic_text(path, secret + "\n")
     os.chmod(path, 0o600)
+    codes = [secrets.token_hex(4).upper() for _ in range(10)]
+    atomic_text(
+        recovery_file(),
+        "\n".join(hashlib.sha256(code.encode()).hexdigest() for code in codes) + "\n",
+    )
+    os.chmod(recovery_file(), 0o600)
     storage().audit("admin.totp_enabled")
-    return jsonify(ok=True, enabled=True)
+    return jsonify(ok=True, enabled=True, recovery_codes=codes)
+
+
+@admin.post("/api/admin-sessions/revoke")
+def revoke_sessions():
+    require_admin()
+    store = storage()
+    store.revoke_admin_sessions()
+    session["manager"] = admin_stamp()
+    session["manager_seen"] = int(time.time())
+    store.audit("admin.sessions_revoked")
+    return jsonify(ok=True)
 
 
 @admin.post("/logout")
@@ -312,6 +355,7 @@ def albums():
             orphan_thumbs=sum(1 for _ in orphan_previews(folder)),
             needs_password=event.get("needs_password", False),
             share_expires=event.get("share_expires", 0),
+            quota_bytes=int(event.get("quota_bytes", 0)),
         )
         if not event["archived"] and event["public_access"]:
             result.update(share=share_target(slug, event), qr=url_for("pages.qr", slug=slug))
@@ -383,7 +427,12 @@ def cleanup():
 @admin.get("/api/audit")
 def audit_records():
     require_admin()
-    return jsonify(records=storage().audit_records())
+    store = storage()
+    records = [
+        {key: value for key, value in record.items() if key not in {"hash", "previous"}}
+        for record in store.audit_records()
+    ]
+    return jsonify(records=records, integrity=store.audit_integrity())
 
 
 def backup_entries(store):
@@ -394,6 +443,8 @@ def backup_entries(store):
         store.bootstrap,
         store.root / ".backup-settings.json",
         store.root / ".admin-totp",
+        store.root / ".admin-recovery-codes",
+        store.admin_generation,
         store.audit_file,
     ]
     for event in store.events().values():

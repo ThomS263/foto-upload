@@ -2,6 +2,7 @@
 
 import fcntl
 import hashlib
+import hmac
 import json
 import os
 import re
@@ -92,6 +93,7 @@ class Store:
         self.bootstrap = self.root / ".initial-admin-password"
         self.public_url_file = self.root / ".public-url"
         self.audit_file = self.root / ".audit.jsonl"
+        self.admin_generation = self.root / ".admin-session-generation"
         self.configured_hash = configured_hash
         with self.transaction():
             secret_file = self.root / ".secret"
@@ -109,6 +111,9 @@ class Store:
                 atomic_text(self.admin_file, generate_password_hash(password))
             if self.admin_file.exists():
                 os.chmod(self.admin_file, 0o600)
+            if not self.admin_generation.exists():
+                atomic_text(self.admin_generation, secrets.token_hex(16) + "\n")
+            os.chmod(self.admin_generation, 0o600)
             self._discover(seeds)
         with closing(self._rates()) as db:
             db.execute(
@@ -148,6 +153,7 @@ class Store:
             event.setdefault("allow_comments", False)
             event.setdefault("event_date", "")
             event.setdefault("tone", "green")
+            event.setdefault("quota_bytes", 0)
             event.setdefault("revision", 0)
             self.prepare(event)
         for folder in sorted(self.uploads.iterdir()):
@@ -219,16 +225,40 @@ class Store:
         with self.transaction():
             atomic_text(self.admin_file, generate_password_hash(password_value(password, 10)))
             self.bootstrap.unlink(missing_ok=True)
+        self.revoke_admin_sessions()
+
+    def admin_session_value(self):
+        return self.admin_generation.read_text(encoding="utf-8").strip()
+
+    def revoke_admin_sessions(self):
+        with self.transaction():
+            atomic_text(self.admin_generation, secrets.token_hex(16) + "\n")
+            os.chmod(self.admin_generation, 0o600)
 
     def audit(self, action, **details):
         """Append a bounded, credential-free administrator activity record."""
         allowed = {key: plain(str(value), 120) for key, value in details.items()}
-        record = {"time": int(time.time()), "action": plain(action, 64), **allowed}
         with locked(self.locks / "audit"):
+            previous_hash = ""
+            if self.audit_file.exists():
+                try:
+                    last = self.audit_file.read_text(encoding="utf-8").splitlines()[-1]
+                    previous_hash = str(json.loads(last).get("hash", ""))
+                except (IndexError, OSError, ValueError):
+                    previous_hash = ""
             if self.audit_file.exists() and self.audit_file.stat().st_size > 2 * 1024**2:
                 previous = self.audit_file.with_suffix(".jsonl.1")
                 previous.unlink(missing_ok=True)
                 os.replace(self.audit_file, previous)
+                previous_hash = ""
+            record = {
+                "time": int(time.time()), "action": plain(action, 64),
+                "previous": previous_hash, **allowed,
+            }
+            canonical = json.dumps(record, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+            record["hash"] = hmac.new(
+                self.secret.encode(), canonical.encode(), hashlib.sha256
+            ).hexdigest()
             with self.audit_file.open("a", encoding="utf-8") as output:
                 output.write(json.dumps(record, ensure_ascii=False) + "\n")
             os.chmod(self.audit_file, 0o600)
@@ -246,6 +276,22 @@ class Store:
                 except ValueError:
                     continue
         return rows[-maximum:][::-1]
+
+    def audit_integrity(self):
+        previous_hash = ""
+        for source in reversed(self.audit_records(100000)):
+            record = dict(source)
+            supplied = str(record.pop("hash", ""))
+            if not supplied and "previous" not in record:
+                continue  # Records created before hash chaining was introduced.
+            if record.get("previous", "") != previous_hash:
+                return False
+            canonical = json.dumps(record, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+            expected = hmac.new(self.secret.encode(), canonical.encode(), hashlib.sha256).hexdigest()
+            if not supplied or not hmac.compare_digest(supplied, expected):
+                return False
+            previous_hash = supplied
+        return True
 
     def change(self, slug, values, action):
         if not isinstance(slug, str) or not SLUG.fullmatch(slug):
@@ -304,6 +350,11 @@ class Store:
                     if tone not in {"green", "blue", "rose", "gold"}:
                         raise Problem("Ungültige Albumfarbe.")
                     event["tone"] = tone
+                if "quota_bytes" in values:
+                    quota = values["quota_bytes"]
+                    if not isinstance(quota, int) or isinstance(quota, bool) or quota < 0:
+                        raise Problem("Ungültiges Speicherlimit.")
+                    event["quota_bytes"] = min(quota, 100 * 1024**4)
                 if "password" in values:
                     event["password_hash"] = generate_password_hash(
                         password_value(values["password"])

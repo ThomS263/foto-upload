@@ -58,7 +58,9 @@ def guest():
 
 
 def admin_stamp():
-    return hashlib.sha256(storage().admin_hash().encode()).hexdigest()
+    store = storage()
+    value = store.admin_hash() + ":" + store.admin_session_value()
+    return hashlib.sha256(value.encode()).hexdigest()
 
 
 def admin_ok():

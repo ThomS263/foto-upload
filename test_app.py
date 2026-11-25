@@ -92,9 +92,14 @@ class AlbumsTest(unittest.TestCase):
         self.assertEqual(health["files"], {"sommer": 0})
         self.assertIn("free", health["storage"])
         manager.put("/admin/api/events/sommer", json={"subtitle": "Geändert"})
-        records = manager.get("/admin/api/audit").json["records"]
+        audit = manager.get("/admin/api/audit").json
+        self.assertTrue(audit["integrity"])
+        records = audit["records"]
         self.assertEqual(records[0]["action"], "album.edit")
         self.assertNotIn("password", json.dumps(records).lower())
+        path = self.root / ".audit.jsonl"
+        path.write_text(path.read_text().replace("album.edit", "album.fake", 1))
+        self.assertFalse(manager.get("/admin/api/audit").json["integrity"])
         with manager.session_transaction() as user_session:
             user_session["manager_seen"] = int(time.time()) - 1900
         self.assertEqual(manager.get("/admin/api/events").status_code, 401)
@@ -168,12 +173,21 @@ class AlbumsTest(unittest.TestCase):
         manager = self.admin()
         secret = manager.put("/admin/api/totp", json={}).json["secret"]
         code = totp_code(secret)
-        self.assertEqual(
-            manager.put("/admin/api/totp", json={"secret": secret, "code": code}).status_code,
-            200,
-        )
+        enabled = manager.put("/admin/api/totp", json={"secret": secret, "code": code})
+        self.assertEqual(enabled.status_code, 200)
+        recovery = enabled.json["recovery_codes"][0]
+        self.assertEqual(len(enabled.json["recovery_codes"]), 10)
         manager.post("/admin/logout")
         self.assertEqual(manager.post("/admin", data={"password": "test-manager"}).status_code, 401)
+        self.assertEqual(
+            manager.post("/admin", data={"password": "test-manager", "otp": recovery}).status_code,
+            303,
+        )
+        manager.post("/admin/logout")
+        self.assertEqual(
+            manager.post("/admin", data={"password": "test-manager", "otp": recovery}).status_code,
+            401,
+        )
         self.assertEqual(
             manager.post("/admin", data={"password": "test-manager", "otp": totp_code(secret)}).status_code,
             303,
@@ -182,6 +196,20 @@ class AlbumsTest(unittest.TestCase):
             manager.delete("/admin/api/totp", json={"code": totp_code(secret)}).status_code,
             200,
         )
+
+    def test_admin_session_revocation_and_album_quota(self):
+        first = self.admin()
+        second = self.admin(self.app.test_client())
+        self.assertEqual(first.post("/admin/api/admin-sessions/revoke").status_code, 200)
+        self.assertEqual(second.get("/admin/api/events").status_code, 401)
+        self.assertEqual(first.get("/admin/api/events").status_code, 200)
+        self.assertEqual(
+            first.put("/admin/api/events/sommer", json={"quota_bytes": 1}).status_code, 200
+        )
+        guest = self.enter(self.app.test_client())
+        result = guest.post("/upload", data={"file": (io.BytesIO(jpeg()), "zu-gross.jpg")})
+        self.assertEqual(result.status_code, 507)
+        self.assertFalse(any((self.root / "uploads/ferien").glob("*.jpg")))
 
     def test_migration_preserves_folder_names_files_and_existing_hashes(self):
         legacy = self.root / "legacy"

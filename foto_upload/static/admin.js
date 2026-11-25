@@ -44,6 +44,7 @@ function editor(album, opened) {
   fields.subtitle.value = album.subtitle;
   fields.event_date.value = album.event_date || "";
   fields.tone.value = album.tone || "green";
+  fields.quota_gb.value = album.quota_bytes ? (album.quota_bytes / 1024 ** 3).toFixed(1) : "0";
   fields.public_access.checked = album.public_access;
   fields.allow_upload.checked = album.allow_upload;
   fields.allow_gallery.checked = album.allow_gallery;
@@ -69,6 +70,7 @@ function editor(album, opened) {
         allow_gallery: fields.allow_gallery.checked, allow_download: fields.allow_download.checked,
         expose_gps: fields.expose_gps.checked, allow_reactions: fields.allow_reactions.checked,
         allow_comments: fields.allow_comments.checked};
+      data.quota_bytes = Math.round(Number(fields.quota_gb.value || 0) * 1024 ** 3);
       data.share_expires = fields.share_expires.value ? Math.floor(new Date(fields.share_expires.value).getTime() / 1000) : 0;
       if (fields.password.value) data.password = fields.password.value;
       await request(url, "PUT", data);
@@ -273,9 +275,12 @@ byId("totp-setup").onclick = async () => {
 totp.onsubmit = event => {
   event.preventDefault();
   act(totp, async () => {
-    await request("/admin/api/totp", "PUT", {secret: totp.elements.secret.value, code: totp.elements.code.value});
+    const data = await request("/admin/api/totp", "PUT", {secret: totp.elements.secret.value, code: totp.elements.code.value});
     totp.elements.code.value = "";
-    return "Zwei-Faktor-Anmeldung ist aktiviert.";
+    if (data.recovery_codes) {
+      prompt("Diese Wiederherstellungscodes jetzt sicher speichern. Jeder Code funktioniert nur einmal:", data.recovery_codes.join(" "));
+    }
+    return "Zwei-Faktor-Anmeldung ist aktiviert. Wiederherstellungscodes wurden erzeugt.";
   });
 };
 byId("totp-disable").onclick = async () => {
@@ -301,7 +306,15 @@ byId("load-audit").onclick = async () => {
         .map(([key, value]) => key + ": " + value).join(" · ");
       return element("li", formatter.format(new Date(record.time * 1000)) + " · " + record.action + (details ? " · " + details : ""));
     }));
-    status.textContent = data.records.length ? data.records.length + " Einträge" : "Noch keine Aktivitäten vorhanden.";
+    status.textContent = (data.integrity ? "✓ Protokoll unverändert · " : "⚠ Protokollprüfung fehlgeschlagen · ") +
+      (data.records.length ? data.records.length + " Einträge" : "Noch keine Aktivitäten vorhanden.");
   } catch (error) { status.textContent = error.message; }
+};
+byId("revoke-sessions").onclick = async () => {
+  if (!confirm("Wirklich alle anderen Admin-Geräte abmelden?")) return;
+  try {
+    await request("/admin/api/admin-sessions/revoke", "POST", {});
+    byId("session-status").textContent = "✓ Alle anderen Admin-Sitzungen wurden beendet.";
+  } catch (error) { byId("session-status").textContent = error.message; }
 };
 load().catch(error => { byId("admin-status").textContent = error.message; });
