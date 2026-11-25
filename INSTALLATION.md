@@ -2,7 +2,7 @@
 
 Auf CasaOS kannst du Foto-Upload vollständig im Browser installieren. Auf einem anderen Linux-Server kannst du aus dem Git-Checkout starten. Für die Installation aus einem Download gibt es fertige Images für Intel/AMD und 64-Bit-ARM. Wähle einen der folgenden Wege.
 
-Für Android gibt es zusätzlich eine Begleit-App mit QR-Scanner, Teilen-Funktion und Serverauswahl. [Android-App und aktuelle APK herunterladen](https://github.com/ThomS263/foto-uploadl_androidapp/releases/latest)
+Für Android gibt es zusätzlich eine Begleit-App mit QR-Scanner, Teilen-Funktion und Serverauswahl. [Android-App und aktuelle APK herunterladen](https://github.com/ThomS263/foto-upload-android/releases/latest)
 
 ## 1. In CasaOS über die Oberfläche
 
