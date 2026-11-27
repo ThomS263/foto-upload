@@ -1,5 +1,5 @@
 -r requirements.txt
 pytest>=8,<10
-playwright>=1.55,<2
+playwright>=1.65.2,<2
 zxing-cpp>=2.3,<4
 PyYAML>=6,<7
