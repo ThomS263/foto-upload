@@ -32,7 +32,7 @@ from .storage import Problem, directory, locked, read_json, safe_name, write_jso
 from .views import admin_ok, admin_stamp, payload, require_admin, share_target, storage
 
 admin = Blueprint("admin", __name__, url_prefix="/admin")
-VERSION = "3.7.0"
+VERSION = "3.8.0"
 
 
 def totp_file():
@@ -187,6 +187,13 @@ def disk_space():
     require_admin()
     usage = shutil.disk_usage(storage().root)
     return jsonify(total=usage.total, free=usage.free, reserve=current_app.config["MIN_FREE_BYTES"])
+
+
+@admin.get("/api/status-token")
+def status_token():
+    """Expose the read-only monitoring token only inside an admin session."""
+    require_admin()
+    return jsonify(token=storage().status_token())
 
 
 @admin.route("/api/public-url", methods=["GET", "PUT"])

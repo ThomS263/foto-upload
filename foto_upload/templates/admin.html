@@ -33,6 +33,9 @@
     <ul id="security-issues"></ul>
     <label>Update-Befehl<input id="update-command" readonly></label>
     <div class="actions"><button type="button" id="copy-update">Befehl kopieren</button><button type="button" id="reload-diagnostics">Neu prüfen</button></div>
+    <label>Home-Assistant-Status-Token<input id="status-token" type="password" readonly autocomplete="off"></label>
+    <p>Dieser Schlüssel erlaubt ausschließlich das Lesen der Statuswerte. Füge ihn bei der Einrichtung der Home-Assistant-Integration ein.</p>
+    <button type="button" id="copy-status-token">Status-Token kopieren</button>
   </details>
   <details class="panel" id="create"><summary>Album anlegen</summary><form id="new-album">
     <label>Albumname<input name="title" required maxlength="80"></label>

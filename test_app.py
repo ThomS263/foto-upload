@@ -91,6 +91,18 @@ class AlbumsTest(unittest.TestCase):
         health = manager.get("/health").json
         self.assertEqual(health["files"], {"sommer": 0})
         self.assertIn("free", health["storage"])
+        token = manager.get("/admin/api/status-token").json["token"]
+        self.assertGreater(len(token), 30)
+        api_health = self.app.test_client().get(
+            "/health", headers={"Authorization": f"Bearer {token}"}
+        )
+        self.assertEqual(api_health.json["files"], {"sommer": 0})
+        self.assertNotIn(
+            "files",
+            self.app.test_client().get(
+                "/health", headers={"Authorization": "Bearer wrong"}
+            ).json,
+        )
         manager.put("/admin/api/events/sommer", json={"subtitle": "Geändert"})
         audit = manager.get("/admin/api/audit").json
         self.assertTrue(audit["integrity"])

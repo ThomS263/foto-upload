@@ -92,6 +92,7 @@ class Store:
         self.admin_file = self.root / ".admin_password_hash"
         self.bootstrap = self.root / ".initial-admin-password"
         self.public_url_file = self.root / ".public-url"
+        self.status_token_file = self.root / ".status-token"
         self.audit_file = self.root / ".audit.jsonl"
         self.admin_generation = self.root / ".admin-session-generation"
         self.configured_hash = configured_hash
@@ -114,6 +115,9 @@ class Store:
             if not self.admin_generation.exists():
                 atomic_text(self.admin_generation, secrets.token_hex(16) + "\n")
             os.chmod(self.admin_generation, 0o600)
+            if not self.status_token_file.exists():
+                atomic_text(self.status_token_file, secrets.token_urlsafe(32) + "\n")
+            os.chmod(self.status_token_file, 0o600)
             self._discover(seeds)
         with closing(self._rates()) as db:
             db.execute(
@@ -211,6 +215,10 @@ class Store:
         if self.public_url_file.exists():
             return self.public_url_file.read_text(encoding="utf-8").strip()
         return fallback
+
+    def status_token(self):
+        """Return the read-only monitoring token stored in the data directory."""
+        return self.status_token_file.read_text(encoding="utf-8").strip()
 
     def set_public_url(self, value):
         with self.transaction():

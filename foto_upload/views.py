@@ -203,7 +203,13 @@ def health():
     status = {"ok": True, "gallery": True, "version": VERSION}
     # Detailed album and storage information is useful to administrators but
     # should not be exposed to unauthenticated internet health probes.
-    if request.args.get("ready") != "1" and admin_ok():
+    authorization = request.headers.get("Authorization", "")
+    supplied = authorization[7:] if authorization.startswith("Bearer ") else request.headers.get("X-Foto-Upload-Token", "")
+    expected = storage().status_token()
+    status_ok = bool(supplied and expected and secrets.compare_digest(supplied, expected))
+    if supplied and not status_ok:
+        abort(401)
+    if request.args.get("ready") != "1" and (admin_ok() or status_ok):
         store = storage()
         events = store.events()
         active = {slug: event for slug, event in events.items() if not event["archived"]}

@@ -185,6 +185,12 @@ byId("copy-update").onclick = async () => {
   try { await navigator.clipboard.writeText(byId("update-command").value); byId("security-status").textContent = "Update-Befehl kopiert."; }
   catch { byId("update-command").select(); byId("security-status").textContent = "Befehl markiert – bitte kopieren."; }
 };
+json("/admin/api/status-token").then(data => { byId("status-token").value = data.token; });
+byId("copy-status-token").onclick = async () => {
+  const field = byId("status-token");
+  try { await navigator.clipboard.writeText(field.value); byId("security-status").textContent = "Status-Token kopiert."; }
+  catch { field.type = "text"; field.select(); byId("security-status").textContent = "Status-Token markiert – bitte kopieren."; }
+};
 diagnostics().catch(error => { byId("security-status").textContent = error.message; });
 const publicUrl = byId("public-url");
 json("/admin/api/public-url").then(data => {
