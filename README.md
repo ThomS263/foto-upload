@@ -2,7 +2,7 @@
 
 Foto-Upload sammelt die Fotos und Videos einer Feier oder Reise auf deinem eigenen Server. Gäste scannen einen QR-Code, öffnen ihr Album und laden Originale direkt vom Handy hoch. Die Oberfläche ist auf Deutsch. Die App läuft auf CasaOS und anderen Linux-Servern mit Docker.
 
-**[Manuelle Installation](INSTALLATION.md)** · [Downloads für AMD64 und ARM64](https://github.com/ThomS263/foto-upload/releases/latest) · [Android-App mit APK](https://github.com/ThomS263/foto-upload-android) · [Wiki](https://github.com/ThomS263/foto-upload/wiki)
+**[Live-Sandbox](https://thoms263.github.io/foto-upload/)** · **[Manuelle Installation](INSTALLATION.md)** · [Downloads für AMD64 und ARM64](https://github.com/ThomS263/foto-upload/releases/latest) · [Android-App mit APK](https://github.com/ThomS263/foto-upload-android) · [Wiki](https://github.com/ThomS263/foto-upload/wiki)
 
 **Auf CasaOS** die verlinkte YAML öffnen und den gesamten Text im **App Store → Custom Install → Import** einfügen. Im Dialog unter `PHOTO_ADMIN_PASSWORD` ein eigenes Erstpasswort setzen und **Installieren** wählen. CasaOS lädt das passende Image. [YAML für den CasaOS-Import öffnen](https://raw.githubusercontent.com/ThomS263/foto-upload/v3.8.0/Apps/FotoUpload/docker-compose.yml)
 
